@@ -1,3 +1,13 @@
 spring:
   application:
     name: trustline
+  datasource:
+    url: ${SPAY_SERVER_DATABASE_URL}
+    username: ${SPAY_SERVER_DATABASE_USERNAME}
+    password: ${SPAY_SERVER_DATABASE_PASS}
+    driver-class-name: org.postgresql.Driver
+    jpa:
+      show-sql: false
+      properties:
+        hibernate:
+          dialect: org.hibernate.dialect.PostgreSQLDialect
