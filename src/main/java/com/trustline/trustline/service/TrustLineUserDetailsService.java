@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.UUID;
 
 @Service
 public class TrustLineUserDetailsService implements UserDetailsService {
@@ -26,5 +27,9 @@ public class TrustLineUserDetailsService implements UserDetailsService {
             throw new UsernameNotFoundException("User not found");
         }
         return new org.springframework.security.core.userdetails.User(user.getUsername(), user.getPassword(), new ArrayList<>());
+    }
+
+    public User getUserById(UUID id) {
+        return userRepository.findById(id).orElse(null);
     }
 }
