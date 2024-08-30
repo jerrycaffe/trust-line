@@ -1,0 +1,19 @@
+server:
+  port: 8082
+spring:
+    application:
+      name: trustline
+    datasource:
+      url: ${TRUSTLINE_SERVER_DATABASE_URL}
+      username: ${TRUSTLINE_SERVER_DATABASE_USERNAME}
+      password: ${TRUSTLINE_SERVER_DATABASE_PASS}
+      driver-class-name: org.postgresql.Driver
+    jpa:
+      show-sql: false
+      properties:
+        hibernate:
+          dialect: org.hibernate.dialect.PostgreSQLDialect
+          ddl-auto: create
+          format_sql: true
+
+
