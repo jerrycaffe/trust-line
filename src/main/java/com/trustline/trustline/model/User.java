@@ -3,7 +3,8 @@ package com.trustline.trustline.model;
 import jakarta.persistence.*;
 import jakarta.persistence.GeneratedValue;
 import lombok.Data;
-import org.hibernate.annotations.GenericGenerator;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.util.UUID;
 
@@ -12,11 +13,8 @@ import java.util.UUID;
 @Table(name = "users")
 public class User {
     @Id
-    @GeneratedValue(generator = "UUID")
-    @GenericGenerator(
-            name = "UUID",
-            strategy = "org.hibernate.id.UUIDGenerator"
-    )
+    @JdbcTypeCode(SqlTypes.UUID)
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
     @Column(nullable = false, unique = true)
@@ -27,5 +25,9 @@ public class User {
 
 
     public User(String username) {
+        this.username= username;
+        this.password = password;
     }
+
+
 }

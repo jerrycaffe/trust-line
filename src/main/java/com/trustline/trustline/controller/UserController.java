@@ -6,6 +6,7 @@ import com.trustline.trustline.model.User;
 import com.trustline.trustline.repository.UserRepository;
 import com.trustline.trustline.service.AuthenticationService;
 import com.trustline.trustline.service.TrustLineUserDetailsService;
+import com.trustline.trustline.service.UserService;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +25,8 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
 
     private final TrustLineUserDetailsService trustLineUserDetailsService;
+
+    private final UserService service;
 
 
     @GetMapping("/{id}")
@@ -45,6 +48,12 @@ public class UserController {
                         @RequestParam("password") String password,
                         Model model) {
         return authenticationService.login(username, password, model);
+    }
+
+
+    @PostMapping("/login")
+    public String login(User user){
+        return service.verify(user);
     }
 
 }
