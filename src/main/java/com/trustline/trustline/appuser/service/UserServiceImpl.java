@@ -78,11 +78,12 @@ public class UserServiceImpl implements UserService {
                 new UsernamePasswordAuthenticationToken(loginReq.getUserName(), loginReq.getPassword()));
 
         User user = userRepository.findByEmail(loginReq.getUserName()).orElseThrow(() -> new UsernameNotFoundException("User not found"));
-        String token = jwtConfig.generateToken(user);
         LoginRes<UserResponseDto> loginUser = new LoginRes<>();
-        loginUser.setAccessToken(token);
-        loginUser.setMessage("Login Successful");
+        String token = jwtConfig.generateToken(user);
         loginUser.setData(UserResponseDto.fromUser(user));
+        loginUser.setMessage("Login Successful");
+        if (user.getStatus() == Status.OTP_VALIDATION) return loginUser;
+        loginUser.setAccessToken(token);
 
         return loginUser;
     }

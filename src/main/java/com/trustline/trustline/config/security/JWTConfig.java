@@ -1,5 +1,6 @@
 package com.trustline.trustline.config.security;
 
+import com.google.api.client.util.Value;
 import com.trustline.trustline.appuser.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -13,7 +14,9 @@ import java.util.Date;
 
 @Service
 public class JWTConfig {
-private static final String SECRET = "trustline-by-adedamola";
+
+    @Value("${jwt.signin.secret}")
+    private String secret;
 
 
 private SecretKey setKey(){
@@ -38,7 +41,7 @@ private SecretKey setKey(){
     }
     private Claims extractClaims(String token){
         return Jwts.parserBuilder()
-                .setSigningKey(Keys.hmacShaKeyFor(SECRET.getBytes()))
+                .setSigningKey(Keys.hmacShaKeyFor(secret.getBytes()))
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
