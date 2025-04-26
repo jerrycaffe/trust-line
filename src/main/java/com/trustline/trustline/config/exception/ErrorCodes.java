@@ -11,6 +11,8 @@ public class ErrorCodes {
     public static final String FORMAT_ERROR_CODE = "30";
     public static final String FORMAT_ERROR_MESSAGE = "Format Error.";
     public static final String NOT_FOUND_ERROR_CODE = "25";
+
+    public static final String BAD_CREDENTIALS_ERROR_CODE = "21";
     public static final String NOT_FOUND_ERROR_MESSAGE = "Not Found.";
 
     public static final String ILLEGAL_INPUT_ERROR_CODE = "76";

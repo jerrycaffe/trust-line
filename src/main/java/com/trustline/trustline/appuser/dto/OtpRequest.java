@@ -8,6 +8,6 @@ import lombok.Data;
 public class OtpRequest {
     @Null(message = "verification id is required")
     private String verificationId;
-    @NotNull(message = "otp code is required")
-    private String code;
+    @NotNull(message = "phone number is required")
+    private String phoneNumber;
 }

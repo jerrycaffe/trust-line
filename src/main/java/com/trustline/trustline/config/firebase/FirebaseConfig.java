@@ -1,29 +1,32 @@
 package com.trustline.trustline.config.firebase;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 
-@Service
+@Slf4j
+@Configuration
 public class FirebaseConfig {
 
-    public String sendOtp(String phoneNumber) throws FirebaseAuthException {
-        FirebaseAuth auth = FirebaseAuth.getInstance();
-        return auth.createCustomToken(phoneNumber);
-    }
+    @Bean
+    public FirebaseApp firebaseApp() throws IOException {
 
-    public String verifyPhoneNumber(String phoneNumber, String code){
-        FirebaseAuth firebaseAuth = FirebaseAuth.getInstance();
-//        PhoneAuthCredential credential = PhoneAuthProvider.getCredentials();
-        return null;
+        InputStream serviceAccount = new ClassPathResource("firebase/trustline-b92df-7c1a0fdeb463.json").getInputStream();
+        FirebaseOptions options = FirebaseOptions.builder()
+                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                    .build();
+            return FirebaseApp.initializeApp(options);
     }
 }
