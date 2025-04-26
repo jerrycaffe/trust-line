@@ -37,4 +37,4 @@ out/
 .vscode/
 
 ### Firebase
-/config/firebase
+resources/firebase
