@@ -15,12 +15,14 @@ spring:
           ddl-auto: create
           format_sql: true
 
-
-
 jwt:
   signing:
     key: ${JWT_KEY}
     secret: ${JWT_SECRET}
+
+firebase:
+  config:
+    location: ${FIREBASE_CONFIG_LOCATION}
 
 email:
   sendgrid:
