@@ -37,5 +37,6 @@ out/
 .vscode/
 
 ### Firebase
-resources/firebase
-src/main/java/com/trustline/trustline/config/firebase/*.json
+/src/main/resources/firebase/*.json
+/.run/
+
