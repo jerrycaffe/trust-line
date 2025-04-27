@@ -17,7 +17,6 @@ public class PrincipalUser implements UserDetails {
     private final AuthProvider authProvider;
     private final String username;
     private final boolean enabled;
-    @JsonIgnore
     private final String password;
 
 

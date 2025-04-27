@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users(
      deleted BOOLEAN default false,
      first_name CHARACTER VARYING,
      last_name CHARACTER VARYING,
+     status CHARACTER VARYING,
      gender CHARACTER VARYING,
      password CHARACTER VARYING,
      profile_image_url CHARACTER VARYING,

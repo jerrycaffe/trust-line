@@ -9,15 +9,21 @@ spring:
       password: ${TRUSTLINE_SERVER_DATABASE_PASS}
       driver-class-name: org.postgresql.Driver
     jpa:
-      show-sql: true
+      show-sql: false
       properties:
         hibernate:
-          dialect: org.hibernate.dialect.PostgreSQLDialect
           ddl-auto: create
           format_sql: true
-
-
 
 jwt:
   signing:
     key: ${JWT_KEY}
+    secret: ${JWT_SECRET}
+
+firebase:
+  config:
+    location: ${FIREBASE_CONFIG_LOCATION}
+
+email:
+  sendgrid:
+    api-key: ${SENDGRID_API_KEY}

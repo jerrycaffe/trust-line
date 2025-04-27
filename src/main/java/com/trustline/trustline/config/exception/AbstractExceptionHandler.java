@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -15,8 +17,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 
 import static com.trustline.trustline.config.exception.ErrorCodes.*;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
-import static org.springframework.http.HttpStatus.NOT_ACCEPTABLE;
+import static org.springframework.http.HttpStatus.*;
 
 @ControllerAdvice
 @Slf4j
@@ -95,4 +96,16 @@ public class AbstractExceptionHandler {
         log.error("HttpMessageNotReadableException Exception >>> "+ex);
         return new ResponseEntity<>(new Response(new Error(FORMAT_ERROR_CODE, "Incorrect input supplied to the system")), HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public  ResponseEntity<Response> userNameNotFound(UsernameNotFoundException ex){
+        log.error("UsernameNotFoundException Exception >>> "+ex);
+        return new ResponseEntity<>(new Response(new Error(NOT_FOUND_ERROR_CODE, ex.getMessage())), HttpStatus.NOT_FOUND);
+    }
+
+@ExceptionHandler(BadCredentialsException.class)
+public  ResponseEntity<Response> badCredentialsException(BadCredentialsException ex){
+    log.error("BadCredentialsException Exception >>> "+ex);
+    return new ResponseEntity<>(new Response(new Error(BAD_CREDENTIALS_ERROR_CODE, ex.getMessage())), HttpStatus.BAD_REQUEST);
+}
 }

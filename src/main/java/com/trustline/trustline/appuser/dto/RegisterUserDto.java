@@ -1,6 +1,8 @@
 package com.trustline.trustline.appuser.dto;
 
+import com.trustline.trustline.appuser.model.Gender;
 import jakarta.validation.constraints.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -8,6 +10,7 @@ import java.util.UUID;
 
 @Getter
 @Setter
+@Builder
 public class RegisterUserDto {
 
     @NotBlank(message = "Email is required")
@@ -18,4 +21,7 @@ public class RegisterUserDto {
     @NotBlank(message = "Phone number field is required")
     @Pattern(regexp = "^\\+?[0-9]{10,15}$", message = "Phone number must be valid")
     private String phoneNumber;
+
+    @NotNull(message = "gender field is required")
+    private Gender gender;
 }

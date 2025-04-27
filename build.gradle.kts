@@ -27,6 +27,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
+
+    implementation("com.google.firebase:firebase-admin:9.4.3")
+
     implementation("org.flywaydb:flyway-core:9.22.0")
     implementation ("org.springframework.boot:spring-boot-starter-validation")
     compileOnly("org.projectlombok:lombok")

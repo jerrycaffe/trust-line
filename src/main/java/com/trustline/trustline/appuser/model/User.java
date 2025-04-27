@@ -34,6 +34,8 @@ public class User extends AuditModel{
     private String lastName;
     @Enumerated(EnumType.STRING)
     private Gender gender;
+    @Enumerated(EnumType.STRING)
+    private Status status;
     private boolean accountVerified;
     private String password;
     private String profileImageUrl;
