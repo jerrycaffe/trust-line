@@ -117,7 +117,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public User resetPassword(ResetPasswordReq resetPasswordReq) {
         User user = userRepository.findByEmail(resetPasswordReq.getUserName())
-                .orElseThrow(()-> new UsernameNotFoundException(resetPasswordReq.getUserName()));
+                .orElseThrow(()-> new EmailNotFoundException(resetPasswordReq.getUserName()));
         String newPassword = passwordEncoder.encode(resetPasswordReq.getNewPassword());
         user.setPassword(newPassword);
         return userRepository.save(user);
