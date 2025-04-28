@@ -103,5 +103,25 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    @Override
+    public User forgotPassword(ForgotPasswordReq forgotPasswordReq) {
+        String phoneNumber = forgotPasswordReq.getPhoneNumber();
+        String email = forgotPasswordReq.getEmail();
+        if (phoneNumber == null && email == null)
+            throw new BadRequestException("Email and phone number cannot be empty");
+        return userRepository.findByEmailOrPhoneNumber(email, phoneNumber).orElseThrow(()-> new BadRequestException("User not found"));
+
+
+    }
+
+    @Override
+    public User resetPassword(ResetPasswordReq resetPasswordReq) {
+        User user = userRepository.findByEmail(resetPasswordReq.getUserName())
+                .orElseThrow(()-> new UsernameNotFoundException(resetPasswordReq.getUserName()));
+        String newPassword = passwordEncoder.encode(resetPasswordReq.getNewPassword());
+        user.setPassword(newPassword);
+        return userRepository.save(user);
+    }
+
 
 }
