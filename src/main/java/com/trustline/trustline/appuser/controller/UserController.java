@@ -52,13 +52,5 @@ public class UserController {
 //  TODO:  forgot password request to generate OTP
 //    TODO: after successfully validating OTP, reset password with new password is provided
 
-    @PostMapping("/otp")
-    public void sendOtp(){
-        EmailRequest emailRequest = new EmailRequest();
-        emailRequest.setRecipientEmail("jerrycaffe@gmail.com");
-        emailRequest.setSubject("Welcome to Trustline");
-        emailRequest.setRecipientName("Adeleye");
-        emailService.sendMail(emailRequest);
-    }
 
 }

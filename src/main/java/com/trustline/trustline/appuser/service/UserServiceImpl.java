@@ -32,6 +32,7 @@ public class UserServiceImpl implements UserService {
     private final JWTConfig jwtConfig;
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final EmailService emailService;
 
     @Override
     public User createUser(RegisterUserDto user) {
@@ -40,8 +41,15 @@ public class UserServiceImpl implements UserService {
 
 //      TODO send OTP to user
         User newUser = newUser(user);
+        EmailRequest emailRequest = EmailRequest.builder()
+                .recipientEmail(user.getEmail())
+                .recipientName(newUser.getEmail())
+                .subject("Activate Trustline Account")
+                .recipientId(newUser.getId())
+                .build();
 
 //        TODO Generate Token to be sent to the phone number
+        emailService.sendMail(emailRequest);
 //        TODO Ensure user verifies account
         return userRepository.save(newUser);
     }
@@ -109,7 +117,7 @@ public class UserServiceImpl implements UserService {
         String email = forgotPasswordReq.getEmail();
         if (phoneNumber == null && email == null)
             throw new BadRequestException("Email and phone number cannot be empty");
-        return userRepository.findByEmailOrPhoneNumber(email, phoneNumber).orElseThrow(()-> new BadRequestException("User not found"));
+        return userRepository.findByEmailOrPhoneNumber(email, phoneNumber).orElseThrow(() -> new BadRequestException("User not found"));
 
 
     }
@@ -117,7 +125,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public User resetPassword(ResetPasswordReq resetPasswordReq) {
         User user = userRepository.findByEmail(resetPasswordReq.getUserName())
-                .orElseThrow(()-> new EmailNotFoundException(resetPasswordReq.getUserName()));
+                .orElseThrow(() -> new EmailNotFoundException(resetPasswordReq.getUserName()));
         String newPassword = passwordEncoder.encode(resetPasswordReq.getNewPassword());
         user.setPassword(newPassword);
         return userRepository.save(user);
