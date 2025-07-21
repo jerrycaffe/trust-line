@@ -27,3 +27,5 @@ firebase:
 email:
   sendgrid:
     api-key: ${SENDGRID_API_KEY}
+  mailerSend:
+    api-key: ${MAIL_SENDER_API_KEY}

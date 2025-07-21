@@ -2,6 +2,7 @@ package com.trustline.trustline.appuser.controller;
 
 
 import com.trustline.trustline.appuser.dto.*;
+import com.trustline.trustline.appuser.service.EmailService;
 import com.trustline.trustline.appuser.service.UserService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final EmailService emailService;
 
 
     @PostMapping("/register")
@@ -46,7 +48,17 @@ public class UserController {
     }
 
 
+
 //  TODO:  forgot password request to generate OTP
 //    TODO: after successfully validating OTP, reset password with new password is provided
+
+    @PostMapping("/otp")
+    public void sendOtp(){
+        EmailRequest emailRequest = new EmailRequest();
+        emailRequest.setRecipientEmail("jerrycaffe@gmail.com");
+        emailRequest.setSubject("Welcome to Trustline");
+        emailRequest.setRecipientName("Adeleye");
+        emailService.sendMail(emailRequest);
+    }
 
 }
