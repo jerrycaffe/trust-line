@@ -41,17 +41,18 @@ public class UserServiceImpl implements UserService {
 
 //      TODO send OTP to user
         User newUser = newUser(user);
+      User savedUser =  userRepository.save(newUser);
         EmailRequest emailRequest = EmailRequest.builder()
                 .recipientEmail(user.getEmail())
                 .recipientName(newUser.getEmail())
                 .subject("Activate Trustline Account")
-                .recipientId(newUser.getId())
+                .recipientId(savedUser.getId())
                 .build();
 
 //        TODO Generate Token to be sent to the phone number
         emailService.sendMail(emailRequest);
 //        TODO Ensure user verifies account
-        return userRepository.save(newUser);
+        return savedUser;
     }
 
     private User handleUserExists(User existingUser, RegisterUserDto registerUserDto) {
