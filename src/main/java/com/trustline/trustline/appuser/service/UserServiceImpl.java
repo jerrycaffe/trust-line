@@ -7,6 +7,7 @@ import com.trustline.trustline.appuser.dto.*;
 import com.trustline.trustline.appuser.model.AuthProvider;
 import com.trustline.trustline.appuser.model.Status;
 import com.trustline.trustline.appuser.model.User;
+import com.trustline.trustline.appuser.model.VerificationModel;
 import com.trustline.trustline.appuser.repository.UserRepository;
 import com.trustline.trustline.config.exception.*;
 
@@ -41,7 +42,7 @@ public class UserServiceImpl implements UserService {
 
 //      TODO send OTP to user
         User newUser = newUser(user);
-      User savedUser =  userRepository.save(newUser);
+        User savedUser = userRepository.save(newUser);
         EmailRequest emailRequest = EmailRequest.builder()
                 .recipientEmail(user.getEmail())
                 .recipientName(newUser.getEmail())
@@ -97,19 +98,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public String verifyOtp(OtpRequest otpRequest) {
-        try {
-            FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(otpRequest.getVerificationId());
+        Boolean userVerified = emailService.verifyOtp(otpRequest.getUserId(), otpRequest.getVerificationId());
+        if (!userVerified) throw new BadRequestException("Verification failed");
+        User userDetails = userRepository.findById(otpRequest.getUserId()).get();
+        userDetails.setAccountVerified(true);
+        userDetails.setStatus(Status.VERIFIED);
+        userRepository.save(userDetails);
+        return "Verification Successful!";
 
-            String phoneNumber = decodedToken.getClaims().get("phone_number").toString();
-            User userDetails = userRepository.findByPhoneNumber(phoneNumber).orElseThrow(() -> new BadRequestException("OTP validation Failed due to mismatch of phone number"));
-            userDetails.setAccountVerified(true);
-            userDetails.setStatus(Status.VERIFIED);
-            userRepository.save(userDetails);
-            return "Verification Successful!";
-        } catch (FirebaseAuthException firebaseAuthException) {
-            log.error("Error validating phone number", firebaseAuthException);
-            throw new BadRequestException("Unable to validate phone number, ensure your OTP is correct");
-        }
     }
 
     @Override

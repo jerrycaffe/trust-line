@@ -6,12 +6,17 @@ import com.trustline.trustline.appuser.dto.EmailRequest;
 import com.trustline.trustline.appuser.model.OtpModeEnum;
 import com.trustline.trustline.appuser.model.VerificationModel;
 import com.trustline.trustline.appuser.repository.VerificationRepository;
+import com.trustline.trustline.config.exception.BadRequestException;
+import com.trustline.trustline.config.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import com.mailersend.sdk.MailerSend;
 import com.mailersend.sdk.MailerSendResponse;
 import com.mailersend.sdk.exceptions.MailerSendException;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -49,6 +54,17 @@ public class EmailServiceImpl implements EmailService {
         } catch (MailerSendException e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public Boolean verifyOtp(UUID userId, String pin) {
+
+        VerificationModel verificationModel = verificationRepository.finByIdAndPin(userId, pin).orElseThrow(() -> new NotFoundException("No previous activation found for this user"));
+
+//        TODO: check if the time has not expired, if it has exceeded an hour fail verification
+        if (verificationModel.getCreatedAt().isAfter(LocalDateTime.now().plusHours(2)))
+            throw new BadRequestException("Token expired, initiate another verification");
+        return true;
     }
 
     private String htmlFormat(String user, String otp) {
