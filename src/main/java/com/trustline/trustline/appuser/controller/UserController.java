@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
-    private final EmailService emailService;
 
 
     @PostMapping("/register")
@@ -23,13 +22,17 @@ public class UserController {
         return UserResponseDto.fromUser(userService.createUser(registerUserDto));
     }
 
-    @GetMapping("/verify-otp")
+    @PostMapping("/verify-otp")
     public String verifyOtp(
             @Validated @RequestBody OtpRequest otpRequest
     ) {
         return userService.verifyOtp(otpRequest);
     }
 
+    @PostMapping("/verify-password-otp")
+    public String verifyPasswordOtp(@Validated @RequestBody OtpRequest otpRequest){
+        return userService.resetPasswordOtp(otpRequest);
+    }
 
     @PostMapping("/login")
     public LoginRes<UserResponseDto> login(@Validated @RequestBody LoginReq loginReq) {

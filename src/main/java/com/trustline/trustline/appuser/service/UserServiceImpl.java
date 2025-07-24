@@ -3,11 +3,9 @@ package com.trustline.trustline.appuser.service;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
+import com.trustline.trustline.appuser.Utility;
 import com.trustline.trustline.appuser.dto.*;
-import com.trustline.trustline.appuser.model.AuthProvider;
-import com.trustline.trustline.appuser.model.Status;
-import com.trustline.trustline.appuser.model.User;
-import com.trustline.trustline.appuser.model.VerificationModel;
+import com.trustline.trustline.appuser.model.*;
 import com.trustline.trustline.appuser.repository.UserRepository;
 import com.trustline.trustline.config.exception.*;
 
@@ -43,15 +41,18 @@ public class UserServiceImpl implements UserService {
 //      TODO send OTP to user
         User newUser = newUser(user);
         User savedUser = userRepository.save(newUser);
+        String welcomeOtp = String.valueOf(Utility.generateSixDigitsNumber());
         EmailRequest emailRequest = EmailRequest.builder()
                 .recipientEmail(user.getEmail())
                 .recipientName(newUser.getEmail())
                 .subject("Activate Trustline Account")
+                .htmlTemplate(Utility.welcomeEmailTemplate(user.getEmail(), welcomeOtp))
                 .recipientId(savedUser.getId())
                 .build();
 
 //        TODO Generate Token to be sent to the phone number
-        emailService.sendMail(emailRequest);
+        String messageId = emailService.sendMail(emailRequest);
+        emailService.saveVerification(OtpModeEnum.EMAIL, messageId, savedUser.getId(), welcomeOtp);
 //        TODO Ensure user verifies account
         return savedUser;
     }
@@ -110,13 +111,25 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User forgotPassword(ForgotPasswordReq forgotPasswordReq) {
-        String phoneNumber = forgotPasswordReq.getPhoneNumber();
         String email = forgotPasswordReq.getEmail();
-        if (phoneNumber == null && email == null)
-            throw new BadRequestException("Email and phone number cannot be empty");
-        return userRepository.findByEmailOrPhoneNumber(email, phoneNumber).orElseThrow(() -> new BadRequestException("User not found"));
 
+        User user = userRepository
+                .findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("You cannot perform this action as user does not exist"));
 
+        String resetOtp = String.valueOf(Utility.generateSixDigitsNumber());
+
+        EmailRequest emailRequest = EmailRequest.builder()
+                .recipientId(user.getId())
+                .subject("Reset Password")
+                .recipientEmail(email)
+                .htmlTemplate(Utility.forgotPasswordEmailTemplate(user.getEmail(), resetOtp))
+                .recipientName(email)
+                .build();
+
+        String messageId = emailService.sendMail(emailRequest);
+        emailService.saveVerification(OtpModeEnum.EMAIL, messageId, user.getId(), resetOtp);
+        return user;
     }
 
     @Override
@@ -126,6 +139,13 @@ public class UserServiceImpl implements UserService {
         String newPassword = passwordEncoder.encode(resetPasswordReq.getNewPassword());
         user.setPassword(newPassword);
         return userRepository.save(user);
+    }
+
+    @Override
+    public String resetPasswordOtp(OtpRequest otpRequest) {
+        Boolean otpVerification = emailService.verifyOtp(otpRequest.getUserId(), otpRequest.getVerificationId());
+        if (!otpVerification) throw new BadRequestException("Not a valid OTP");
+        return "OTP validated successfully";
     }
 
 

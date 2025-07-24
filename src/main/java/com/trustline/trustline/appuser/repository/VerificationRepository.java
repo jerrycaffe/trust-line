@@ -9,5 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface VerificationRepository extends JpaRepository<VerificationModel, UUID> {
-    Optional<VerificationModel> finByIdAndPin(UUID userId, String pin);
+    Optional<VerificationModel> findByUserIdAndPin(UUID userId, String pin);
 }

@@ -13,4 +13,6 @@ public interface UserService {
     User forgotPassword(ForgotPasswordReq forgotPasswordReq);
 
     User resetPassword(ResetPasswordReq resetPasswordReq);
+
+    String resetPasswordOtp(OtpRequest otpRequest);
 }

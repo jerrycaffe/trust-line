@@ -11,6 +11,6 @@ public class EmailRequest {
     private String recipientName;
     private String recipientEmail;
     private UUID recipientId;
-
+    private String htmlTemplate;
     private String subject;
 }
