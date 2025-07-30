@@ -73,7 +73,6 @@ public class UserServiceImpl implements UserService {
         return User.builder()
                 .email(user.getEmail())
                 .authProvider(AuthProvider.LOCAL)
-                .gender(user.getGender())
                 .password(passwordEncoder.encode(user.getPassword().trim()))
                 .accountVerified(false)
                 .status(Status.OTP_VALIDATION)
