@@ -25,5 +25,7 @@ public class VerificationModel extends AuditModel {
     private String pin;
     @Enumerated(EnumType.STRING)
     private OtpModeEnum mode;
+    @Enumerated(EnumType.STRING)
+    private VerificationType type;
 
 }

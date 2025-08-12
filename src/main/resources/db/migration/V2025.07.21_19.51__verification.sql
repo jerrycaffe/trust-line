@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS verifications(
     pin character varying NOT NULL,
     message_id character varying,
     mode character varying NOT NULL,
+    type character varying NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE,
     updated_at TIMESTAMP WITH TIME ZONE
     );

@@ -1,7 +1,6 @@
 package com.trustline.trustline.appuser.dto;
 
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Null;
 import lombok.Data;
 
 import java.util.UUID;

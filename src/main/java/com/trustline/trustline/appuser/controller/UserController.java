@@ -29,10 +29,7 @@ public class UserController {
         return userService.verifyOtp(otpRequest);
     }
 
-    @PostMapping("/verify-password-otp")
-    public String verifyPasswordOtp(@Validated @RequestBody OtpRequest otpRequest){
-        return userService.resetPasswordOtp(otpRequest);
-    }
+
 
     @PostMapping("/login")
     public LoginRes<UserResponseDto> login(@Validated @RequestBody LoginReq loginReq) {

@@ -4,6 +4,7 @@ import com.mailersend.sdk.emails.Email;
 import com.trustline.trustline.appuser.dto.EmailRequest;
 import com.trustline.trustline.appuser.model.OtpModeEnum;
 import com.trustline.trustline.appuser.model.VerificationModel;
+import com.trustline.trustline.appuser.model.VerificationType;
 import com.trustline.trustline.appuser.repository.VerificationRepository;
 import com.trustline.trustline.config.exception.BadRequestException;
 import com.trustline.trustline.config.exception.NotFoundException;
@@ -51,25 +52,23 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    public VerificationModel saveVerification(OtpModeEnum mode, String messageId, UUID userId, String otp) {
+    public void saveVerification(OtpModeEnum mode, String messageId, UUID userId, String otp, VerificationType type) {
         VerificationModel verificationModel = VerificationModel.builder()
                 .pin(otp)
                 .mode(OtpModeEnum.EMAIL)
                 .messageId(messageId)
+                .type(type)
                 .userId(userId)
                 .build();
-       return verificationRepository.save(verificationModel);
+        verificationRepository.save(verificationModel);
     }
 
     @Override
-    public Boolean verifyOtp(UUID userId, String pin) {
-
+    public VerificationModel verifyOtp(UUID userId, String pin) {
         VerificationModel verificationModel = verificationRepository.findByUserIdAndPin(userId, pin).orElseThrow(() -> new NotFoundException("No previous activation found for this user"));
-
-//        TODO: check if the time has not expired, if it has exceeded an hour fail verification
         if (verificationModel.getCreatedAt().isAfter(LocalDateTime.now().plusHours(2)))
             throw new BadRequestException("Token expired, initiate another verification");
-        return true;
+        return verificationModel;
     }
 
 

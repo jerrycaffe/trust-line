@@ -21,6 +21,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -52,7 +53,7 @@ public class UserServiceImpl implements UserService {
 
 //        TODO Generate Token to be sent to the phone number
         String messageId = emailService.sendMail(emailRequest);
-        emailService.saveVerification(OtpModeEnum.EMAIL, messageId, savedUser.getId(), welcomeOtp);
+        emailService.saveVerification(OtpModeEnum.EMAIL, messageId, savedUser.getId(), welcomeOtp, VerificationType.REGISTER);
 //        TODO Ensure user verifies account
         return savedUser;
     }
@@ -98,14 +99,17 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public String verifyOtp(OtpRequest otpRequest) {
-        Boolean userVerified = emailService.verifyOtp(otpRequest.getUserId(), otpRequest.getVerificationId());
-        if (!userVerified) throw new BadRequestException("Verification failed");
-        User userDetails = userRepository.findById(otpRequest.getUserId()).get();
+        VerificationModel userVerified = emailService.verifyOtp(otpRequest.getUserId(), otpRequest.getVerificationId());
+//        Update user status if it otp is for user verification
+        if (userVerified.getType().equals(VerificationType.REGISTER)) verifyUserRegistration(otpRequest.getUserId());
+        return "Verification Successful!";
+    }
+
+    private void verifyUserRegistration(UUID userId) {
+        User userDetails = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found, verification cannot be completed"));
         userDetails.setAccountVerified(true);
         userDetails.setStatus(Status.VERIFIED);
         userRepository.save(userDetails);
-        return "Verification Successful!";
-
     }
 
     @Override
@@ -127,7 +131,7 @@ public class UserServiceImpl implements UserService {
                 .build();
 
         String messageId = emailService.sendMail(emailRequest);
-        emailService.saveVerification(OtpModeEnum.EMAIL, messageId, user.getId(), resetOtp);
+        emailService.saveVerification(OtpModeEnum.EMAIL, messageId, user.getId(), resetOtp, VerificationType.RESET_PASSWORD);
         return user;
     }
 
@@ -138,13 +142,6 @@ public class UserServiceImpl implements UserService {
         String newPassword = passwordEncoder.encode(resetPasswordReq.getNewPassword());
         user.setPassword(newPassword);
         return userRepository.save(user);
-    }
-
-    @Override
-    public String resetPasswordOtp(OtpRequest otpRequest) {
-        Boolean otpVerification = emailService.verifyOtp(otpRequest.getUserId(), otpRequest.getVerificationId());
-        if (!otpVerification) throw new BadRequestException("Not a valid OTP");
-        return "OTP validated successfully";
     }
 
 
