@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public interface EmailService {
     String sendMail(EmailRequest emailRequest);
-    void saveVerification(OtpModeEnum mode, String messageId, UUID userId, String otp, VerificationType type);
+    VerificationModel saveVerification(OtpModeEnum mode, String messageId, UUID userId, String otp, VerificationType type);
     VerificationModel verifyOtp(UUID userId, String verificationId);
+    VerificationModel getVerificationById(UUID id);
 }

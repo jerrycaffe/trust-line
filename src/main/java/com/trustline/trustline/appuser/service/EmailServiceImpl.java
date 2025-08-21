@@ -52,7 +52,7 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
-    public void saveVerification(OtpModeEnum mode, String messageId, UUID userId, String otp, VerificationType type) {
+    public VerificationModel saveVerification(OtpModeEnum mode, String messageId, UUID userId, String otp, VerificationType type) {
         VerificationModel verificationModel = VerificationModel.builder()
                 .pin(otp)
                 .mode(OtpModeEnum.EMAIL)
@@ -60,7 +60,7 @@ public class EmailServiceImpl implements EmailService {
                 .type(type)
                 .userId(userId)
                 .build();
-        verificationRepository.save(verificationModel);
+        return verificationRepository.save(verificationModel);
     }
 
     @Override
@@ -69,6 +69,11 @@ public class EmailServiceImpl implements EmailService {
         if (verificationModel.getCreatedAt().isAfter(LocalDateTime.now().plusHours(2)))
             throw new BadRequestException("Token expired, initiate another verification");
         return verificationModel;
+    }
+
+    @Override
+    public VerificationModel getVerificationById(UUID id) {
+        return verificationRepository.findById(id).orElseThrow(()-> new NotFoundException("Previous verification does not exists"));
     }
 
 

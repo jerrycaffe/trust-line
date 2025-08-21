@@ -1,8 +1,6 @@
 package com.trustline.trustline.appuser.service;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseAuthException;
-import com.google.firebase.auth.FirebaseToken;
+
 import com.trustline.trustline.appuser.Utility;
 import com.trustline.trustline.appuser.dto.*;
 import com.trustline.trustline.appuser.model.*;
@@ -35,37 +33,51 @@ public class UserServiceImpl implements UserService {
     private final EmailService emailService;
 
     @Override
-    public User createUser(RegisterUserDto user) {
+    public CreateUserRes createUser(RegisterUserDto user) {
         Optional<User> prevUser = userRepository.findByEmailOrPhoneNumber(user.getEmail(), user.getPhoneNumber());
-        if (prevUser.isPresent()) return handleUserExists(prevUser.get(), user);
+        String otp = String.valueOf(Utility.generateSixDigitsNumber());
+        if (prevUser.isPresent()) return handleUserExists(prevUser.get(), user, otp);
 
 //      TODO send OTP to user
         User newUser = newUser(user);
         User savedUser = userRepository.save(newUser);
-        String welcomeOtp = String.valueOf(Utility.generateSixDigitsNumber());
-        EmailRequest emailRequest = EmailRequest.builder()
-                .recipientEmail(user.getEmail())
-                .recipientName(newUser.getEmail())
-                .subject("Activate Trustline Account")
-                .htmlTemplate(Utility.welcomeEmailTemplate(user.getEmail(), welcomeOtp))
-                .recipientId(savedUser.getId())
-                .build();
 
-//        TODO Generate Token to be sent to the phone number
-        String messageId = emailService.sendMail(emailRequest);
-        emailService.saveVerification(OtpModeEnum.EMAIL, messageId, savedUser.getId(), welcomeOtp, VerificationType.REGISTER);
-//        TODO Ensure user verifies account
-        return savedUser;
+        VerificationModel emailVerification = generateOtp(savedUser, otp);
+
+        return CreateUserRes.builder()
+                .user(savedUser)
+                .otpId(emailVerification.getId())
+                .build();
     }
 
-    private User handleUserExists(User existingUser, RegisterUserDto registerUserDto) {
+    private VerificationModel generateOtp(User user, String otp) {
+        EmailRequest emailRequest = EmailRequest.builder()
+                .recipientEmail(user.getEmail())
+                .recipientName(user.getEmail())
+                .subject("Activate Trustline Account")
+                .htmlTemplate(Utility.welcomeEmailTemplate(user.getEmail(), otp))
+                .recipientId(user.getId())
+                .build();
+
+        //        TODO Generate Token to be sent to the phone number
+        String messageId = emailService.sendMail(emailRequest);
+        return emailService.saveVerification(OtpModeEnum.EMAIL, messageId, user.getId(), otp, VerificationType.REGISTER);
+    }
+
+    private CreateUserRes handleUserExists(User existingUser, RegisterUserDto registerUserDto, String otp) {
         boolean emailMatches = existingUser.getEmail().equals(registerUserDto.getEmail());
         boolean phoneMatches = existingUser.getPhoneNumber().equals(registerUserDto.getPhoneNumber());
 
         if (phoneMatches && !emailMatches)
             throw new PhoneNumberAlreadyExistsException(registerUserDto.getPhoneNumber());
         else if (emailMatches && !phoneMatches) throw new EmailAlreadyExistsException(registerUserDto.getEmail());
-        else if (existingUser.getStatus() == Status.OTP_VALIDATION) return existingUser;
+        else if (existingUser.getStatus() == Status.OTP_VALIDATION) {
+            VerificationModel emailVerification = generateOtp(existingUser, otp);
+            return CreateUserRes.builder()
+                    .otpId(emailVerification.getId())
+                    .user(existingUser)
+                    .build();
+        }
         throw new PhoneNumberAndEmailAlreadyExistsException(existingUser.getPhoneNumber(), existingUser.getEmail());
 
     }
@@ -98,11 +110,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public String verifyOtp(OtpRequest otpRequest) {
+    public OtpVerificationResponse verifyOtp(OtpRequest otpRequest) {
+        log.info("otp request received with details {}", otpRequest);
         VerificationModel userVerified = emailService.verifyOtp(otpRequest.getUserId(), otpRequest.getVerificationId());
 //        Update user status if it otp is for user verification
         if (userVerified.getType().equals(VerificationType.REGISTER)) verifyUserRegistration(otpRequest.getUserId());
-        return "Verification Successful!";
+        return new OtpVerificationResponse("Verification Successful");
     }
 
     private void verifyUserRegistration(UUID userId) {
@@ -142,6 +155,13 @@ public class UserServiceImpl implements UserService {
         String newPassword = passwordEncoder.encode(resetPasswordReq.getNewPassword());
         user.setPassword(newPassword);
         return userRepository.save(user);
+    }
+
+    @Override
+    public OtpVerificationResponse resendOtp(ResendOtpRequest resendOtpRequest) {
+        VerificationModel prevVerification = emailService.getVerificationById(resendOtpRequest.getPrevOtpId());
+//        TODO: Use prev data to generate new verification and return response
+        return null;
     }
 
 

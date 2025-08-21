@@ -19,14 +19,22 @@ public class UserController {
 
     @PostMapping("/register")
     public UserResponseDto register(@RequestBody @Validated RegisterUserDto registerUserDto) {
-        return UserResponseDto.fromUser(userService.createUser(registerUserDto));
+        CreateUserRes createUserRes = userService.createUser(registerUserDto);
+        return UserResponseDto.fromUser(createUserRes.getUser(), createUserRes.getOtpId());
     }
 
     @PostMapping("/verify-otp")
-    public String verifyOtp(
+    public OtpVerificationResponse verifyOtp(
             @Validated @RequestBody OtpRequest otpRequest
     ) {
         return userService.verifyOtp(otpRequest);
+    }
+
+    @PostMapping("/resend-otp")
+    public OtpVerificationResponse verifyOtp(
+            @Validated @RequestBody ResendOtpRequest resendOtpRequest
+    ) {
+        return userService.resendOtp(resendOtpRequest);
     }
 
 
