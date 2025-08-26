@@ -2,10 +2,13 @@ package com.trustline.trustline.appuser.service;
 
 
 import com.trustline.trustline.appuser.Utility;
-import com.trustline.trustline.appuser.dto.*;
+import com.trustline.trustline.appuser.dto.CreateUserRes;
+import com.trustline.trustline.appuser.dto.EmailRequest;
+import com.trustline.trustline.appuser.dto.OtpVerificationResponse;
+import com.trustline.trustline.appuser.dto.RegisterUserDto;
 import com.trustline.trustline.appuser.model.*;
 import com.trustline.trustline.appuser.repository.UserRepository;
-import com.trustline.trustline.config.exception.*;
+import com.trustline.trustline.config.exception.BadRequestException;
 
 import com.trustline.trustline.config.security.CustomUserDetailsService;
 import com.trustline.trustline.config.security.JWTConfig;
@@ -42,7 +45,7 @@ public class UserServiceImpl implements UserService {
         User newUser = newUser(user);
         User savedUser = userRepository.save(newUser);
 
-        VerificationModel emailVerification = generateOtp(savedUser, otp);
+        VerificationModel emailVerification = generateOtp(savedUser, otp, "Activate Trustline Account");
 
         return CreateUserRes.builder()
                 .user(savedUser)
@@ -54,16 +57,16 @@ public class UserServiceImpl implements UserService {
         return String.valueOf(Utility.generateSixDigitsNumber());
     }
 
-    private VerificationModel generateOtp(User user, String otp) {
+    private VerificationModel generateOtp(User user, String otp, String subject, EmailTemplate template, VerificationType verificationType) {
         EmailRequest emailRequest = EmailRequest.builder()
                 .recipientEmail(user.getEmail())
                 .recipientName(user.getEmail())
-                .subject("Activate Trustline Account")
-                .htmlTemplate(Utility.welcomeEmailTemplate(user.getEmail(), otp))
+                .subject(subject)
+                .htmlTemplate(template)
                 .recipientId(user.getId())
                 .build();
         String messageId = emailService.sendMail(emailRequest);
-        return emailService.saveVerification(OtpModeEnum.EMAIL, messageId, user.getId(), otp, VerificationType.REGISTER);
+        return emailService.saveVerification(OtpModeEnum.EMAIL, messageId, user.getId(), otp, verificationType);
     }
 
     private CreateUserRes handleUserExists(User existingUser, RegisterUserDto registerUserDto, String otp) {

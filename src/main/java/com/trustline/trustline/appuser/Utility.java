@@ -1,5 +1,6 @@
 package com.trustline.trustline.appuser;
 
+import com.trustline.trustline.appuser.model.EmailTemplate;
 import lombok.experimental.UtilityClass;
 
 import java.util.Random;
@@ -74,4 +75,12 @@ public class Utility {
         return String.format(forgotPasswordHtml, user, otp);
 
     }
+
+    public static String getEmailTemplate(EmailTemplate emailTemplate, String user, String otp) {
+        return switch (emailTemplate) {
+            case WELCOME -> welcomeEmailTemplate(user, otp);
+            case FORGOT_PASSWORD -> forgotPasswordEmailTemplate(user, otp);
+        };
+    }
+
 }
