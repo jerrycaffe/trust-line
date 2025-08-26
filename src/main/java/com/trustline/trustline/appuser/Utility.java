@@ -31,10 +31,10 @@ public class Utility {
                   </div>
                   <div style='font-size:16px;color:#333;line-height:1.6;padding:10px 0;'>
                     <p>This code will expire in 10 minutes. If you didn’t request this, you can ignore this message.</p>
-                    <p>Welcome to Trustlne — be ensured your security is totalling guarantee.</p>
+                    <p>Welcome to Trustline — be ensured your security is totalling guarantee.</p>
                   </div>
                   <div style='font-size:13px;color:#777;text-align:center;margin-top:30px;'>
-                    &copy; 2025 Trustlne. All rights reserved.
+                    &copy; 2025 Trustline. All rights reserved.
                   </div>
                 </div>
                 """;

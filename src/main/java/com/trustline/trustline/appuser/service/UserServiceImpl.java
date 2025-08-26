@@ -4,7 +4,6 @@ package com.trustline.trustline.appuser.service;
 import com.trustline.trustline.appuser.Utility;
 import com.trustline.trustline.appuser.dto.CreateUserRes;
 import com.trustline.trustline.appuser.dto.EmailRequest;
-import com.trustline.trustline.appuser.dto.OtpVerificationResponse;
 import com.trustline.trustline.appuser.dto.RegisterUserDto;
 import com.trustline.trustline.appuser.model.*;
 import com.trustline.trustline.appuser.repository.UserRepository;
@@ -45,7 +44,7 @@ public class UserServiceImpl implements UserService {
         User newUser = newUser(user);
         User savedUser = userRepository.save(newUser);
 
-        VerificationModel emailVerification = generateOtp(savedUser, otp, "Activate Trustline Account");
+        VerificationModel emailVerification = generateOtp(savedUser, otp, "Activate Trustline Account", EmailTemplate.WELCOME, VerificationType.REGISTER);
 
         return CreateUserRes.builder()
                 .user(savedUser)
@@ -62,7 +61,7 @@ public class UserServiceImpl implements UserService {
                 .recipientEmail(user.getEmail())
                 .recipientName(user.getEmail())
                 .subject(subject)
-                .htmlTemplate(template)
+                .htmlTemplate(Utility.getEmailTemplate(template, user.getEmail(), otp))
                 .recipientId(user.getId())
                 .build();
         String messageId = emailService.sendMail(emailRequest);
