@@ -12,4 +12,5 @@ public interface EmailService {
     VerificationModel saveVerification(OtpModeEnum mode, String messageId, UUID userId, String otp, VerificationType type);
     VerificationModel verifyOtp(UUID userId, String verificationId);
     VerificationModel getVerificationById(UUID id);
+
 }

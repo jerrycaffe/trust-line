@@ -35,7 +35,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public CreateUserRes createUser(RegisterUserDto user) {
         Optional<User> prevUser = userRepository.findByEmailOrPhoneNumber(user.getEmail(), user.getPhoneNumber());
-        String otp = String.valueOf(Utility.generateSixDigitsNumber());
+        String otp = generateOtpPin();
         if (prevUser.isPresent()) return handleUserExists(prevUser.get(), user, otp);
 
 //      TODO send OTP to user
@@ -50,6 +50,10 @@ public class UserServiceImpl implements UserService {
                 .build();
     }
 
+    private String generateOtpPin() {
+        return String.valueOf(Utility.generateSixDigitsNumber());
+    }
+
     private VerificationModel generateOtp(User user, String otp) {
         EmailRequest emailRequest = EmailRequest.builder()
                 .recipientEmail(user.getEmail())
@@ -58,8 +62,6 @@ public class UserServiceImpl implements UserService {
                 .htmlTemplate(Utility.welcomeEmailTemplate(user.getEmail(), otp))
                 .recipientId(user.getId())
                 .build();
-
-        //        TODO Generate Token to be sent to the phone number
         String messageId = emailService.sendMail(emailRequest);
         return emailService.saveVerification(OtpModeEnum.EMAIL, messageId, user.getId(), otp, VerificationType.REGISTER);
     }
@@ -112,10 +114,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public OtpVerificationResponse verifyOtp(OtpRequest otpRequest) {
         log.info("otp request received with details {}", otpRequest);
-        VerificationModel userVerified = emailService.verifyOtp(otpRequest.getUserId(), otpRequest.getVerificationId());
+        VerificationModel verifyUser = emailService.verifyOtp(otpRequest.getUserId(), otpRequest.getVerificationId());
 //        Update user status if it otp is for user verification
-        if (userVerified.getType().equals(VerificationType.REGISTER)) verifyUserRegistration(otpRequest.getUserId());
-        return new OtpVerificationResponse("Verification Successful");
+        if (verifyUser.getType().equals(VerificationType.REGISTER)) verifyUserRegistration(otpRequest.getUserId());
+        return new OtpVerificationResponse("Verification Successful", verifyUser.getId());
     }
 
     private void verifyUserRegistration(UUID userId) {
@@ -159,9 +161,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public OtpVerificationResponse resendOtp(ResendOtpRequest resendOtpRequest) {
-        VerificationModel prevVerification = emailService.getVerificationById(resendOtpRequest.getPrevOtpId());
-//        TODO: Use prev data to generate new verification and return response
-        return null;
+        VerificationModel previousVerification = emailService.getVerificationById(resendOtpRequest.getPrevOtpId());
+        User user = userRepository.findById(previousVerification.getUserId()).orElseThrow(() -> new NotFoundException("User not found"));
+
+        VerificationModel newOtp = generateOtp(user, generateOtpPin());
+        return new OtpVerificationResponse("Resend OTP Successful", newOtp.getId());
     }
 
 
