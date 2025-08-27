@@ -2,13 +2,10 @@ package com.trustline.trustline.appuser.service;
 
 
 import com.trustline.trustline.appuser.Utility;
-import com.trustline.trustline.appuser.dto.CreateUserRes;
-import com.trustline.trustline.appuser.dto.EmailRequest;
-import com.trustline.trustline.appuser.dto.RegisterUserDto;
+import com.trustline.trustline.appuser.dto.*;
 import com.trustline.trustline.appuser.model.*;
 import com.trustline.trustline.appuser.repository.UserRepository;
-import com.trustline.trustline.config.exception.BadRequestException;
-
+import com.trustline.trustline.config.exception.*;
 import com.trustline.trustline.config.security.CustomUserDetailsService;
 import com.trustline.trustline.config.security.JWTConfig;
 import lombok.RequiredArgsConstructor;
@@ -76,7 +73,7 @@ public class UserServiceImpl implements UserService {
             throw new PhoneNumberAlreadyExistsException(registerUserDto.getPhoneNumber());
         else if (emailMatches && !phoneMatches) throw new EmailAlreadyExistsException(registerUserDto.getEmail());
         else if (existingUser.getStatus() == Status.OTP_VALIDATION) {
-            VerificationModel emailVerification = generateOtp(existingUser, otp);
+            VerificationModel emailVerification = generateOtp(existingUser, otp, "Activate your account", EmailTemplate.WELCOME, VerificationType.REGISTER);
             return CreateUserRes.builder()
                     .otpId(emailVerification.getId())
                     .user(existingUser)
@@ -166,7 +163,7 @@ public class UserServiceImpl implements UserService {
         VerificationModel previousVerification = emailService.getVerificationById(resendOtpRequest.getPrevOtpId());
         User user = userRepository.findById(previousVerification.getUserId()).orElseThrow(() -> new NotFoundException("User not found"));
 
-        VerificationModel newOtp = generateOtp(user, generateOtpPin());
+        VerificationModel newOtp = generateOtp(user, generateOtpPin(), "Trustline Resend OTP", previousVerification.getType(), previousVerification.getType());
         return new OtpVerificationResponse("Resend OTP Successful", newOtp.getId());
     }
 
