@@ -8,6 +8,7 @@ import com.trustline.trustline.appuser.repository.UserRepository;
 import com.trustline.trustline.config.exception.*;
 import com.trustline.trustline.config.security.CustomUserDetailsService;
 import com.trustline.trustline.config.security.JWTConfig;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,6 +31,9 @@ public class UserServiceImpl implements UserService {
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final EmailService emailService;
+    public static final String ACTIVATE_ACCOUNT = "Activate Trustline Account";
+    public static final String RESET_PASSWORD = "Reset Password";
+    public static final String RESEND_OTP = "Trustline Resend OTP";
 
     @Override
     public CreateUserRes createUser(RegisterUserDto user) {
@@ -41,24 +45,21 @@ public class UserServiceImpl implements UserService {
         User newUser = newUser(user);
         User savedUser = userRepository.save(newUser);
 
-        VerificationModel emailVerification = generateOtp(savedUser, otp, "Activate Trustline Account", EmailTemplate.WELCOME, VerificationType.REGISTER);
+        VerificationModel emailVerification = generateOtp(savedUser, otp, ACTIVATE_ACCOUNT, VerificationType.REGISTER);
 
-        return CreateUserRes.builder()
-                .user(savedUser)
-                .otpId(emailVerification.getId())
-                .build();
+        return buildUserResponse(savedUser, emailVerification);
     }
 
     private String generateOtpPin() {
-        return String.valueOf(Utility.generateSixDigitsNumber());
+        return String.format("%06d", Utility.generateSixDigitsNumber());
     }
 
-    private VerificationModel generateOtp(User user, String otp, String subject, EmailTemplate template, VerificationType verificationType) {
+    private VerificationModel generateOtp(User user, String otp, String subject, VerificationType verificationType) {
         EmailRequest emailRequest = EmailRequest.builder()
                 .recipientEmail(user.getEmail())
                 .recipientName(user.getEmail())
                 .subject(subject)
-                .htmlTemplate(Utility.getEmailTemplate(template, user.getEmail(), otp))
+                .htmlTemplate(Utility.getEmailTemplate(verificationType, user.getEmail(), otp))
                 .recipientId(user.getId())
                 .build();
         String messageId = emailService.sendMail(emailRequest);
@@ -73,21 +74,26 @@ public class UserServiceImpl implements UserService {
             throw new PhoneNumberAlreadyExistsException(registerUserDto.getPhoneNumber());
         else if (emailMatches && !phoneMatches) throw new EmailAlreadyExistsException(registerUserDto.getEmail());
         else if (existingUser.getStatus() == Status.OTP_VALIDATION) {
-            VerificationModel emailVerification = generateOtp(existingUser, otp, "Activate your account", EmailTemplate.WELCOME, VerificationType.REGISTER);
-            return CreateUserRes.builder()
-                    .otpId(emailVerification.getId())
-                    .user(existingUser)
-                    .build();
+            VerificationModel emailVerification = generateOtp(existingUser, otp, ACTIVATE_ACCOUNT, VerificationType.REGISTER);
+            return buildUserResponse(existingUser, emailVerification);
         }
         throw new PhoneNumberAndEmailAlreadyExistsException(existingUser.getPhoneNumber(), existingUser.getEmail());
 
     }
 
+    private CreateUserRes buildUserResponse(User user, VerificationModel verification) {
+        return CreateUserRes.builder()
+                .user(user)
+                .otpId(verification.getId())
+                .build();
+    }
+
+
     private User newUser(RegisterUserDto user) {
         return User.builder()
                 .email(user.getEmail())
                 .authProvider(AuthProvider.LOCAL)
-                .password(passwordEncoder.encode(user.getPassword().trim()))
+                .password(passwordEncoder.encode(user.getPassword()))
                 .accountVerified(false)
                 .status(Status.OTP_VALIDATION)
                 .phoneNumber(user.getPhoneNumber())
@@ -96,17 +102,15 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public LoginRes<UserResponseDto> login(LoginReq loginReq) {
-        authenticationManager.authenticate(
+       authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginReq.getUserName(), loginReq.getPassword()));
 
-        User user = userRepository.findByEmail(loginReq.getUserName()).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        User user = userRepository.findByEmail(loginReq.getUserName()).orElseThrow(()-> new UsernameNotFoundException(loginReq.getUserName()));
         LoginRes<UserResponseDto> loginUser = new LoginRes<>();
         String token = jwtConfig.generateToken(user);
         loginUser.setData(UserResponseDto.fromUser(user));
         loginUser.setMessage("Login Successful");
-        if (user.getStatus() == Status.OTP_VALIDATION) return loginUser;
-        loginUser.setAccessToken(token);
-
+        if (user.getStatus() == Status.VERIFIED) loginUser.setAccessToken(token);
         return loginUser;
     }
 
@@ -119,34 +123,22 @@ public class UserServiceImpl implements UserService {
         return new OtpVerificationResponse("Verification Successful", verifyUser.getId());
     }
 
-    private void verifyUserRegistration(UUID userId) {
+    @Transactional
+    public void verifyUserRegistration(UUID userId) {
         User userDetails = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found, verification cannot be completed"));
         userDetails.setAccountVerified(true);
         userDetails.setStatus(Status.VERIFIED);
-        userRepository.save(userDetails);
     }
 
     @Override
-    public User forgotPassword(ForgotPasswordReq forgotPasswordReq) {
-        String email = forgotPasswordReq.getEmail();
+    public ForgotPasswordRes forgotPassword(ForgotPasswordReq forgotPasswordReq) {
 
         User user = userRepository
-                .findByEmail(email)
+                .findByEmail(forgotPasswordReq.getEmail())
                 .orElseThrow(() -> new BadRequestException("You cannot perform this action as user does not exist"));
 
-        String resetOtp = String.valueOf(Utility.generateSixDigitsNumber());
-
-        EmailRequest emailRequest = EmailRequest.builder()
-                .recipientId(user.getId())
-                .subject("Reset Password")
-                .recipientEmail(email)
-                .htmlTemplate(Utility.forgotPasswordEmailTemplate(user.getEmail(), resetOtp))
-                .recipientName(email)
-                .build();
-
-        String messageId = emailService.sendMail(emailRequest);
-        emailService.saveVerification(OtpModeEnum.EMAIL, messageId, user.getId(), resetOtp, VerificationType.RESET_PASSWORD);
-        return user;
+        VerificationModel generateOtp = generateOtp(user, generateOtpPin(), RESET_PASSWORD, VerificationType.RESET_PASSWORD);
+        return new ForgotPasswordRes(generateOtp.getId());
     }
 
     @Override
@@ -163,7 +155,7 @@ public class UserServiceImpl implements UserService {
         VerificationModel previousVerification = emailService.getVerificationById(resendOtpRequest.getPrevOtpId());
         User user = userRepository.findById(previousVerification.getUserId()).orElseThrow(() -> new NotFoundException("User not found"));
 
-        VerificationModel newOtp = generateOtp(user, generateOtpPin(), "Trustline Resend OTP", previousVerification.getType(), previousVerification.getType());
+        VerificationModel newOtp = generateOtp(user, generateOtpPin(), RESEND_OTP, previousVerification.getType());
         return new OtpVerificationResponse("Resend OTP Successful", newOtp.getId());
     }
 

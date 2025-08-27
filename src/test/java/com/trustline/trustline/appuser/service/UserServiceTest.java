@@ -1,5 +1,6 @@
 package com.trustline.trustline.appuser.service;
 
+import com.trustline.trustline.appuser.dto.CreateUserRes;
 import com.trustline.trustline.appuser.dto.RegisterUserDto;
 import com.trustline.trustline.appuser.model.Status;
 import com.trustline.trustline.appuser.model.User;
@@ -25,6 +26,9 @@ class UserServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private EmailService emailService;
 
 
 
@@ -67,8 +71,9 @@ class UserServiceTest {
         RegisterUserDto registerUserDto = registerReq();
         when(userRepository.save(any(User.class))).thenReturn(newUser);
 
-        User response = userService.createUser(registerUserDto);
-        assertEquals(Status.OTP_VALIDATION, response.getStatus());
+        CreateUserRes response = userService.createUser(registerUserDto);
+        assertNotNull(response.getUser());
+        assertEquals(Status.OTP_VALIDATION, response.getUser().getStatus());
         verify(userRepository, times(1)).save(any(User.class));
     }
 
@@ -77,9 +82,11 @@ class UserServiceTest {
         User newUser = dbUser();
         RegisterUserDto registerUserDto = registerReq();
         when(userRepository.findByEmailOrPhoneNumber(registerReq().getEmail(), registerReq().getPhoneNumber())).thenReturn(Optional.of(newUser));
+        when(emailService.sendMail())
 
-        User response = userService.createUser(registerUserDto);
-        assertEquals(Status.OTP_VALIDATION, response.getStatus());
+        CreateUserRes response = userService.createUser(registerUserDto);
+        assertNotNull(response.getUser());
+        assertEquals(Status.OTP_VALIDATION, response.getUser().getStatus());
         verify(userRepository,never()).save(any(User.class));
     }
 }

@@ -2,7 +2,6 @@ package com.trustline.trustline.appuser.controller;
 
 
 import com.trustline.trustline.appuser.dto.*;
-import com.trustline.trustline.appuser.service.EmailService;
 import com.trustline.trustline.appuser.service.UserService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -46,8 +45,9 @@ public class UserController {
 
     //    TODO: forgot password to include
     @PostMapping("/forgot-password")
-    public UserResponseDto forgotPassword(@Valid @RequestBody ForgotPasswordReq forgotPasswordReq) {
-        return UserResponseDto.fromUser(userService.forgotPassword(forgotPasswordReq));
+    public ForgotPasswordRes forgotPassword(@Valid @RequestBody ForgotPasswordReq forgotPasswordReq) {
+
+        return userService.forgotPassword(forgotPasswordReq);
     }
 
     @PostMapping("/reset-password")
