@@ -1,12 +1,14 @@
 package com.trustline.trustline.appuser.service;
 
+import com.trustline.trustline.appuser.Utility;
 import com.trustline.trustline.appuser.dto.CreateUserRes;
+import com.trustline.trustline.appuser.dto.EmailRequest;
 import com.trustline.trustline.appuser.dto.RegisterUserDto;
-import com.trustline.trustline.appuser.model.Status;
-import com.trustline.trustline.appuser.model.User;
+import com.trustline.trustline.appuser.model.*;
 import com.trustline.trustline.appuser.repository.UserRepository;
 import com.trustline.trustline.config.exception.DuplicateException;
 import com.trustline.trustline.config.exception.PhoneNumberAlreadyExistsException;
+import net.bytebuddy.utility.RandomString;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -87,14 +89,13 @@ class UserServiceTest {
     void createUserShouldRaiseExceptionWhenUserExistByEmail() throws DuplicateException {
         RegisterUserDto registerUserReq = registerReq();
 
-        User user = dbUser("jerry@test.com", "08088492993");
+        User user = dbUser("test@test.com", "08135751087");
 
         when(userRepository.findByEmailOrPhoneNumber(registerReq().getEmail(), registerReq().getPhoneNumber())).thenReturn(Optional.of(user));
-//        when(emailService.sendMail(any())).thenReturn(RandomString.make(10));
 
         var exception = assertThrows(DuplicateException.class, () -> userService.createUser(registerUserReq));
 
-        assertEquals(String.format("Account with email: %s or phone: %s already exists", registerUserReq.getEmail(), registerUserReq.getPhoneNumber()), exception.getMessage());
+        assertEquals(String.format("User with the email: %s already exist", registerUserReq.getEmail()), exception.getMessage());
         verify(userRepository, never()).save(user);
     }
 
@@ -103,7 +104,28 @@ class UserServiceTest {
     void createUserShouldReturnSuccess() {
         User newUser = dbUser();
         RegisterUserDto registerUserDto = registerReq();
+        String messageId = RandomString.make(10);
+        String otp = "123456";
+        VerificationModel verificationModel = VerificationModel.builder()
+                .userId(newUser.getId())
+                .mode(OtpModeEnum.EMAIL)
+                .type(VerificationType.REGISTER)
+                .pin("123457")
+                .messageId(messageId)
+                .id(UUID.randomUUID())
+                .build();
+        EmailRequest emailRequest = EmailRequest.builder()
+                .recipientEmail(newUser.getEmail())
+                .subject("Activate account")
+                .recipientEmail(newUser.getEmail())
+                .recipientName(newUser.getEmail())
+                .htmlTemplate(Utility.getEmailTemplate(VerificationType.REGISTER, newUser.getEmail(), otp))
+                .build();
+
         when(userRepository.save(any(User.class))).thenReturn(newUser);
+        when(emailService.sendMail(emailRequest)).thenReturn(messageId);
+        when(emailService.saveVerification(OtpModeEnum.EMAIL, messageId, newUser.getId(), otp, VerificationType.REGISTER))
+                .thenReturn(verificationModel);
 
         CreateUserRes response = userService.createUser(registerUserDto);
         assertNotNull(response.getUser());
