@@ -72,7 +72,7 @@ public class UserServiceImpl implements UserService {
 
         if (phoneMatches && !emailMatches)
             throw new PhoneNumberAlreadyExistsException(registerUserDto.getPhoneNumber());
-        else if (emailMatches && !phoneMatches) throw new EmailAlreadyExistsException(registerUserDto.getEmail());
+        if (emailMatches && !phoneMatches) throw new EmailAlreadyExistsException(registerUserDto.getEmail());
         else if (existingUser.getStatus() == Status.OTP_VALIDATION) {
             VerificationModel emailVerification = generateOtp(existingUser, otp, ACTIVATE_ACCOUNT, VerificationType.REGISTER);
             return buildUserResponse(existingUser, emailVerification);

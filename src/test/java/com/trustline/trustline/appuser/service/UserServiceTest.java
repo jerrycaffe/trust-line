@@ -6,6 +6,7 @@ import com.trustline.trustline.appuser.model.Status;
 import com.trustline.trustline.appuser.model.User;
 import com.trustline.trustline.appuser.repository.UserRepository;
 import com.trustline.trustline.config.exception.DuplicateException;
+import com.trustline.trustline.config.exception.PhoneNumberAlreadyExistsException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -49,14 +50,47 @@ class UserServiceTest {
                 .accountVerified(false)
                 .build();
     }
+    User dbUser(String email) {
+        return User.builder()
+                .email(email)
+                .phoneNumber("08088492993")
+                .status(Status.OTP_VALIDATION)
+                .id(UUID.randomUUID())
+                .accountVerified(false)
+                .build();
+    }
+    User dbUser(String email, String phoneNumber) {
+        return User.builder()
+                .email(email)
+                .phoneNumber(phoneNumber)
+                .status(Status.OTP_VALIDATION)
+                .id(UUID.randomUUID())
+                .accountVerified(false)
+                .build();
+    }
+    @Test
+    void createUserShouldRaiseExceptionWhenUserPhoneNumberExists() throws DuplicateException {
+        RegisterUserDto registerUserReq = registerReq();
+
+        User user = dbUser("jerry@test.com", "08088492993");
+
+        when(userRepository.findByEmailOrPhoneNumber(registerReq().getEmail(), registerReq().getPhoneNumber())).thenReturn(Optional.of(user));
+//        when(emailService.sendMail(any())).thenReturn(RandomString.make(10));
+
+        var exception = assertThrows(PhoneNumberAlreadyExistsException.class, () -> userService.createUser(registerUserReq));
+
+        assertEquals(String.format("User with the Phone number: %s already exist", registerUserReq.getPhoneNumber()), exception.getMessage());
+        verify(userRepository, never()).save(user);
+    }
 
     @Test
     void createUserShouldRaiseExceptionWhenUserExistByEmail() throws DuplicateException {
         RegisterUserDto registerUserReq = registerReq();
 
-        User user = dbUser();
+        User user = dbUser("jerry@test.com", "08088492993");
 
         when(userRepository.findByEmailOrPhoneNumber(registerReq().getEmail(), registerReq().getPhoneNumber())).thenReturn(Optional.of(user));
+//        when(emailService.sendMail(any())).thenReturn(RandomString.make(10));
 
         var exception = assertThrows(DuplicateException.class, () -> userService.createUser(registerUserReq));
 
@@ -79,10 +113,11 @@ class UserServiceTest {
 
     @Test
     void createUserShouldReturnSuccessForExistingUser(){
+
         User newUser = dbUser();
         RegisterUserDto registerUserDto = registerReq();
         when(userRepository.findByEmailOrPhoneNumber(registerReq().getEmail(), registerReq().getPhoneNumber())).thenReturn(Optional.of(newUser));
-        when(emailService.sendMail())
+//        when(emailService.sendMail())
 
         CreateUserRes response = userService.createUser(registerUserDto);
         assertNotNull(response.getUser());
