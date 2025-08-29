@@ -1,13 +1,13 @@
 package com.trustline.trustline.appuser.service;
 
-import com.trustline.trustline.appuser.Utility;
 import com.trustline.trustline.appuser.dto.CreateUserRes;
-import com.trustline.trustline.appuser.dto.EmailRequest;
 import com.trustline.trustline.appuser.dto.RegisterUserDto;
 import com.trustline.trustline.appuser.model.*;
 import com.trustline.trustline.appuser.repository.UserRepository;
 import com.trustline.trustline.config.exception.DuplicateException;
+import com.trustline.trustline.config.exception.EmailAlreadyExistsException;
 import com.trustline.trustline.config.exception.PhoneNumberAlreadyExistsException;
+import com.trustline.trustline.config.exception.PhoneNumberAndEmailAlreadyExistsException;
 import net.bytebuddy.utility.RandomString;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,7 +33,7 @@ class UserServiceTest {
     @Mock
     private EmailService emailService;
 
-
+    public static final String ACTIVATE_ACCOUNT = "Activate Trustline Account";
 
     RegisterUserDto registerReq() {
         return RegisterUserDto.builder()
@@ -52,6 +52,7 @@ class UserServiceTest {
                 .accountVerified(false)
                 .build();
     }
+
     User dbUser(String email) {
         return User.builder()
                 .email(email)
@@ -61,6 +62,7 @@ class UserServiceTest {
                 .accountVerified(false)
                 .build();
     }
+
     User dbUser(String email, String phoneNumber) {
         return User.builder()
                 .email(email)
@@ -70,8 +72,9 @@ class UserServiceTest {
                 .accountVerified(false)
                 .build();
     }
+
     @Test
-    void createUserShouldRaiseExceptionWhenUserPhoneNumberExists() throws DuplicateException {
+    void createUserShouldRaiseExceptionWhenUserPhoneNumberExists() throws PhoneNumberAlreadyExistsException {
         RegisterUserDto registerUserReq = registerReq();
 
         User user = dbUser("jerry@test.com", "08088492993");
@@ -86,7 +89,7 @@ class UserServiceTest {
     }
 
     @Test
-    void createUserShouldRaiseExceptionWhenUserExistByEmail() throws DuplicateException {
+    void createUserShouldRaiseExceptionWhenUserExistByEmail() throws EmailAlreadyExistsException {
         RegisterUserDto registerUserReq = registerReq();
 
         User user = dbUser("test@test.com", "08135751087");
@@ -99,33 +102,43 @@ class UserServiceTest {
         verify(userRepository, never()).save(user);
     }
 
-
     @Test
-    void createUserShouldReturnSuccess() {
-        User newUser = dbUser();
-        RegisterUserDto registerUserDto = registerReq();
-        String messageId = RandomString.make(10);
-        String otp = "123456";
-        VerificationModel verificationModel = VerificationModel.builder()
-                .userId(newUser.getId())
+    void createUserShouldRaiseExceptionWhenUserExistByEmailAndPhone() throws PhoneNumberAndEmailAlreadyExistsException {
+        RegisterUserDto registerUserReq = registerReq();
+
+        User existingUser = dbUser();
+        existingUser.setStatus(Status.VERIFIED);
+
+        when(userRepository.findByEmailOrPhoneNumber(registerUserReq.getEmail(), registerUserReq.getPhoneNumber()))
+                .thenReturn(Optional.of(existingUser));
+
+        var exception = assertThrows(PhoneNumberAndEmailAlreadyExistsException.class, () -> userService.createUser(registerUserReq));
+
+        assertEquals(String.format("User with the Phone number: %s and Email: %s already exist", registerUserReq.getPhoneNumber(), registerUserReq.getEmail()), exception.getMessage());
+        verify(userRepository, never()).save(existingUser);
+    }
+
+    private VerificationModel getVerificationModelt(User user, String messageId) {
+        return VerificationModel.builder()
+                .userId(user.getId())
                 .mode(OtpModeEnum.EMAIL)
                 .type(VerificationType.REGISTER)
                 .pin("123457")
                 .messageId(messageId)
                 .id(UUID.randomUUID())
                 .build();
-        EmailRequest emailRequest = EmailRequest.builder()
-                .recipientEmail(newUser.getEmail())
-                .subject("Activate account")
-                .recipientEmail(newUser.getEmail())
-                .recipientName(newUser.getEmail())
-                .htmlTemplate(Utility.getEmailTemplate(VerificationType.REGISTER, newUser.getEmail(), otp))
-                .build();
+    }
+
+    @Test
+    void createUserShouldReturnSuccess() {
+        User newUser = dbUser();
+        RegisterUserDto registerUserDto = registerReq();
+        String messageId = RandomString.make(10);
+        VerificationModel verificationModel = getVerificationModelt(newUser, messageId);
+
 
         when(userRepository.save(any(User.class))).thenReturn(newUser);
-        when(emailService.sendMail(emailRequest)).thenReturn(messageId);
-        when(emailService.saveVerification(OtpModeEnum.EMAIL, messageId, newUser.getId(), otp, VerificationType.REGISTER))
-                .thenReturn(verificationModel);
+        when(emailService.saveVerification(any(), any(), any(), any(), any())).thenReturn(verificationModel);
 
         CreateUserRes response = userService.createUser(registerUserDto);
         assertNotNull(response.getUser());
@@ -134,16 +147,19 @@ class UserServiceTest {
     }
 
     @Test
-    void createUserShouldReturnSuccessForExistingUser(){
+    void createUserShouldReturnSuccessForExistingUser() {
 
         User newUser = dbUser();
         RegisterUserDto registerUserDto = registerReq();
+        VerificationModel verificationModel = getVerificationModelt(newUser, RandomString.make(10));
+
         when(userRepository.findByEmailOrPhoneNumber(registerReq().getEmail(), registerReq().getPhoneNumber())).thenReturn(Optional.of(newUser));
-//        when(emailService.sendMail())
+        when(emailService.saveVerification(any(), any(), any(), any(), any())).thenReturn(verificationModel);
+
 
         CreateUserRes response = userService.createUser(registerUserDto);
         assertNotNull(response.getUser());
         assertEquals(Status.OTP_VALIDATION, response.getUser().getStatus());
-        verify(userRepository,never()).save(any(User.class));
+        verify(userRepository, never()).save(any(User.class));
     }
 }
