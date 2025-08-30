@@ -18,6 +18,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -34,6 +35,7 @@ public class UserServiceImpl implements UserService {
     public static final String ACTIVATE_ACCOUNT = "Activate Trustline Account";
     public static final String RESET_PASSWORD = "Reset Password";
     public static final String RESEND_OTP = "Trustline Resend OTP";
+    public static final String PREV_VERIFICATION_NOT_FOUND = "No Previous verification found";
 
     @Override
     public CreateUserRes createUser(RegisterUserDto user) {
@@ -117,7 +119,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public OtpVerificationResponse verifyOtp(OtpRequest otpRequest) {
         log.info("otp request received with details {}", otpRequest);
-        VerificationModel verifyUser = emailService.verifyOtp(otpRequest.getUserId(), otpRequest.getVerificationId());
+        VerificationModel verifyUser = emailService.getbyUserIdAndPin(otpRequest.getUserId(), otpRequest.getVerificationId()).orElseThrow(()-> new NotFoundException(PREV_VERIFICATION_NOT_FOUND));
+        if (verifyUser.getCreatedAt().isBefore(LocalDateTime.now().minusHours(2)))
+            throw new BadRequestException("Token expired, initiate another verification");
 //        Update user status if it otp is for user verification
         if (verifyUser.getType().equals(VerificationType.REGISTER)) verifyUserRegistration(otpRequest.getUserId());
         return new OtpVerificationResponse("Verification Successful", verifyUser.getId());
@@ -152,7 +156,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public OtpVerificationResponse resendOtp(ResendOtpRequest resendOtpRequest) {
-        VerificationModel previousVerification = emailService.getVerificationById(resendOtpRequest.getPrevOtpId());
+        VerificationModel previousVerification = emailService.getVerificationById(resendOtpRequest.getPrevOtpId()).orElseThrow(()-> new NotFoundException(PREV_VERIFICATION_NOT_FOUND));
         User user = userRepository.findById(previousVerification.getUserId()).orElseThrow(() -> new NotFoundException("User not found"));
 
         VerificationModel newOtp = generateOtp(user, generateOtpPin(), RESEND_OTP, previousVerification.getType());

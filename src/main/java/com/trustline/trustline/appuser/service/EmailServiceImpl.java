@@ -1,22 +1,20 @@
 package com.trustline.trustline.appuser.service;
 
+import com.mailersend.sdk.MailerSend;
+import com.mailersend.sdk.MailerSendResponse;
 import com.mailersend.sdk.emails.Email;
+import com.mailersend.sdk.exceptions.MailerSendException;
 import com.trustline.trustline.appuser.dto.EmailRequest;
 import com.trustline.trustline.appuser.model.OtpModeEnum;
 import com.trustline.trustline.appuser.model.VerificationModel;
 import com.trustline.trustline.appuser.model.VerificationType;
 import com.trustline.trustline.appuser.repository.VerificationRepository;
-import com.trustline.trustline.config.exception.BadRequestException;
-import com.trustline.trustline.config.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import com.mailersend.sdk.MailerSend;
-import com.mailersend.sdk.MailerSendResponse;
-import com.mailersend.sdk.exceptions.MailerSendException;
 
-import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -63,17 +61,15 @@ public class EmailServiceImpl implements EmailService {
         return verificationRepository.save(verificationModel);
     }
 
-    @Override
-    public VerificationModel verifyOtp(UUID userId, String pin) {
-        VerificationModel verificationModel = verificationRepository.findByUserIdAndPin(userId, pin).orElseThrow(() -> new NotFoundException("No previous activation found for this user"));
-        if (verificationModel.getCreatedAt().isAfter(LocalDateTime.now().plusHours(2)))
-            throw new BadRequestException("Token expired, initiate another verification");
-        return verificationModel;
-    }
+
 
     @Override
-    public VerificationModel getVerificationById(UUID id) {
-        return verificationRepository.findById(id).orElseThrow(()-> new NotFoundException("Previous verification does not exists"));
+    public Optional<VerificationModel> getVerificationById(UUID id) {
+        return verificationRepository.findById(id);
+    }
+    @Override
+    public Optional<VerificationModel> getbyUserIdAndPin(UUID userId, String pin) {
+        return verificationRepository.findByUserIdAndPin(userId, pin);
     }
 
 

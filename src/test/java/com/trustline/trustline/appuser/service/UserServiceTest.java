@@ -1,20 +1,20 @@
 package com.trustline.trustline.appuser.service;
 
 import com.trustline.trustline.appuser.dto.CreateUserRes;
+import com.trustline.trustline.appuser.dto.OtpRequest;
 import com.trustline.trustline.appuser.dto.RegisterUserDto;
 import com.trustline.trustline.appuser.model.*;
 import com.trustline.trustline.appuser.repository.UserRepository;
-import com.trustline.trustline.config.exception.DuplicateException;
-import com.trustline.trustline.config.exception.EmailAlreadyExistsException;
-import com.trustline.trustline.config.exception.PhoneNumberAlreadyExistsException;
-import com.trustline.trustline.config.exception.PhoneNumberAndEmailAlreadyExistsException;
+import com.trustline.trustline.config.exception.*;
 import net.bytebuddy.utility.RandomString;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -161,5 +161,111 @@ class UserServiceTest {
         assertNotNull(response.getUser());
         assertEquals(Status.OTP_VALIDATION, response.getUser().getStatus());
         verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void login() {
+    }
+
+    @Test
+    void verifyOtp() {
+//        TODO: Get verificationid from user and userid
+//        throw exception once user cannot be found
+//        throw exception when user is found and no verification was strted
+//        once user is found and verification model is located, change status
+    }
+
+    @Test
+    void verifyOtpShouldRaiseExceptionWhenVerificationNotFound() throws NotFoundException{
+        OtpRequest otpRequest = new OtpRequest();
+        otpRequest.setUserId(UUID.randomUUID());
+        otpRequest.setVerificationId(RandomString.make(6));
+
+        var exception = assertThrows(NotFoundException.class, () -> userService.verifyOtp(otpRequest));
+        assertEquals("No Previous verification found", exception.getMessage());
+    }
+    @Test
+    void verifyOtpShouldRaiseExceptionWhenTokenExpires() throws BadRequestException{
+
+        UUID userId = UUID.randomUUID();
+        String pin = RandomString.make(6);
+
+        OtpRequest otpRequest = new OtpRequest();
+        otpRequest.setUserId(userId);
+        otpRequest.setVerificationId(pin);
+
+        VerificationModel verificationModel = new VerificationModel();
+        verificationModel.setUserId(userId);
+        verificationModel.setType(VerificationType.REGISTER);
+        ReflectionTestUtils.setField(verificationModel, "createdAt", LocalDateTime.now().minusHours(3));
+
+        when(emailService.getbyUserIdAndPin(any(), anyString())).thenReturn(Optional.of(verificationModel));
+
+        var exception = assertThrows(BadRequestException.class, () -> userService.verifyOtp(otpRequest));
+        assertEquals("Token expired, initiate another verification", exception.getMessage());
+    }
+
+    @Test
+    void verifyOtpShouldRaiseExceptionWhenUserIsNotFound() throws NotFoundException{
+
+        UUID userId = UUID.randomUUID();
+        String pin = RandomString.make(6);
+
+        OtpRequest otpRequest = new OtpRequest();
+        otpRequest.setUserId(userId);
+        otpRequest.setVerificationId(pin);
+
+        VerificationModel verificationModel = new VerificationModel();
+        verificationModel.setUserId(userId);
+        verificationModel.setType(VerificationType.REGISTER);
+        ReflectionTestUtils.setField(verificationModel, "createdAt", LocalDateTime.now());
+
+        when(emailService.getbyUserIdAndPin(any(), anyString())).thenReturn(Optional.of(verificationModel));
+
+        var exception = assertThrows(NotFoundException.class, () -> userService.verifyOtp(otpRequest));
+        assertEquals("User not found, verification cannot be completed", exception.getMessage());
+    }
+
+    @Test
+    void verifyOtpShouldBeSuccessful() throws NotFoundException{
+
+        UUID userId = UUID.randomUUID();
+        String pin = RandomString.make(6);
+
+
+
+        OtpRequest otpRequest = new OtpRequest();
+        otpRequest.setUserId(userId);
+        otpRequest.setVerificationId(pin);
+
+        VerificationModel verificationModel = new VerificationModel();
+        verificationModel.setUserId(userId);
+        verificationModel.setType(VerificationType.REGISTER);
+        ReflectionTestUtils.setField(verificationModel, "createdAt", LocalDateTime.now());
+
+        when(emailService.getbyUserIdAndPin(any(), anyString())).thenReturn(Optional.of(verificationModel));
+        when(userRepository.findById(any()))
+
+
+        var exception = assertThrows(NotFoundException.class, () -> userService.verifyOtp(otpRequest));
+        assertEquals("User not found, verification cannot be completed", exception.getMessage());
+    }
+
+
+
+    @Test
+    void verifyUserRegistration() {
+    }
+
+    @Test
+    void forgotPassword() {
+    }
+
+    @Test
+    void resetPassword() {
+    }
+
+    @Test
+    void resendOtp() {
     }
 }
