@@ -8,7 +8,6 @@ import com.trustline.trustline.appuser.repository.UserRepository;
 import com.trustline.trustline.config.exception.*;
 import com.trustline.trustline.config.security.CustomUserDetailsService;
 import com.trustline.trustline.config.security.JWTConfig;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -127,11 +126,12 @@ public class UserServiceImpl implements UserService {
         return new OtpVerificationResponse("Verification Successful", verifyUser.getId());
     }
 
-    @Transactional
+
     public void verifyUserRegistration(UUID userId) {
         User userDetails = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User not found, verification cannot be completed"));
         userDetails.setAccountVerified(true);
         userDetails.setStatus(Status.VERIFIED);
+        userRepository.save(userDetails);
     }
 
     @Override
