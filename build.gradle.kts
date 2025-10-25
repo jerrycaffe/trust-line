@@ -31,6 +31,14 @@ dependencies {
     implementation("com.google.firebase:firebase-admin:9.4.3")
     implementation("com.mailersend:java-sdk:1.4.1")
 
+
+
+
+    // Logging (Logback is included by default in Spring Boot)
+    // Optional: for JSON or advanced logging
+    implementation ("net.logstash.logback:logstash-logback-encoder:7.4")
+
+
     implementation("org.flywaydb:flyway-core:9.22.0")
     implementation ("org.springframework.boot:spring-boot-starter-validation")
     compileOnly("org.projectlombok:lombok")
@@ -44,6 +52,12 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5")
 
+}
+
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:2023.0.3")
+    }
 }
 
 tasks.withType<Test> {

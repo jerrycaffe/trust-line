@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: trustline
+  cloud:
+    vault:
+      uri: ${VAULT_ADDR=}
+      token: ${VAULT_TOKEN=}
+      kv:
+        enabled: true
+        backend: secret
+        application-name: trustline
