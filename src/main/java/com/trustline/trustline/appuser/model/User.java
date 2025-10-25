@@ -32,7 +32,6 @@ public class User extends AuditModel{
     private boolean deleted;
     private String firstName;
     private String lastName;
-    @Enumerated(EnumType.STRING)
     private Gender gender;
     @Enumerated(EnumType.STRING)
     private Status status;

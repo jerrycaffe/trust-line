@@ -1,0 +1,31 @@
+server:
+  port: ${TRUSTLINE_PORT}
+spring:
+  application:
+    name: trustline
+  datasource:
+    url: ${TRUSTLINE_SERVER_DATABASE_URL}
+    username: ${TRUSTLINE_SERVER_DATABASE_USERNAME}
+    password: ${TRUSTLINE_SERVER_DATABASE_PASS}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        ddl-auto: create
+        format_sql: true
+
+jwt:
+  signing:
+    key: ${JWT_KEY}
+    secret: ${JWT_SECRET}
+
+firebase:
+  config:
+    location: ${FIREBASE_CONFIG_LOCATION}
+
+email:
+  sendgrid:
+    api-key: ${SENDGRID_API_KEY}
+  mailerSend:
+    api-key: ${MAIL_SENDER_API_KEY}

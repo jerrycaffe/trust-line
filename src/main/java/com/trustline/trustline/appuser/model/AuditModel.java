@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
 @Getter
-public abstract class AuditModel implements Serializable {
+public class AuditModel implements Serializable {
     @CreatedDate
     private LocalDateTime createdAt;
 
