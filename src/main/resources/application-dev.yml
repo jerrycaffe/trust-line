@@ -16,7 +16,7 @@ spring:
         format_sql: true
 
 jwt:
-  signing:
+  signin:
     key: ${JWT_KEY}
     secret: ${JWT_SECRET}
 
