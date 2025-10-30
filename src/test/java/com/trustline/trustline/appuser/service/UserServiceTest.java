@@ -244,7 +244,7 @@ class UserServiceTest {
         ReflectionTestUtils.setField(verificationModel, "createdAt", LocalDateTime.now());
 
         when(emailService.getbyUserIdAndPin(any(), anyString())).thenReturn(Optional.of(verificationModel));
-        when(userRepository.findById(any()));
+        when(userRepository.findById(any())).thenReturn(Optional.empty());
 
 
         var exception = assertThrows(NotFoundException.class, () -> userService.verifyOtp(otpRequest));
