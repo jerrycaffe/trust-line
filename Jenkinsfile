@@ -21,23 +21,18 @@ pipeline {
     }
 
     stage('Build Docker Image') {
-      when {
-        expression { env.BRANCH_NAME == 'dev' && !env.CHANGE_ID }
-      }
       steps {
-        sh 'docker build -t $DOCKER_IMAGE .'
+      echo 'Building Docker image for Render deployment...'
+        sh 'docker build -t my-spring-app:dev .'
       }
     }
 
     stage('Push Docker Image') {
-      when {
-        expression { env.BRANCH_NAME == 'dev' && !env.CHANGE_ID }
-      }
       steps {
         withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
           sh '''
             echo $PASS | docker login -u $USER --password-stdin
-            docker push $DOCKER_IMAGE
+            docker push my-spring-app:dev
           '''
         }
       }
