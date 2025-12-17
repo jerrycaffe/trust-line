@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="trustline"/>
 
-    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="trustline-service"/>
 
-    <!-- Console Appender for Local/Dev -->
+<!--    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>-->
+
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %highlight(%-5level) [%thread] %cyan(%logger{36}) - %msg%n</pattern>
@@ -32,7 +34,7 @@
             <appender-ref ref="CONSOLE"/>
         </root>
 
-        <logger name="com.trustline" level="DEBUG"/>
+        <logger name="com.trsutline.trustline" level="DEBUG"/>
         <logger name="org.springframework.web" level="DEBUG"/>
         <logger name="org.hibernate.SQL" level="DEBUG"/>
         <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
@@ -44,10 +46,11 @@
             <appender-ref ref="JSON_CONSOLE"/>
         </root>
 
-        <logger name="com.spay.swop" level="DEBUG"/>
+        <logger name="com.trustline.trsutline" level="DEBUG"/>
         <logger name="org.springframework.web" level="DEBUG"/>
         <logger name="org.hibernate.SQL" level="DEBUG"/>
     </springProfile>
+
 
     <!-- Production Profile: JSON logging -->
     <springProfile name="prod">
@@ -55,8 +58,13 @@
             <appender-ref ref="JSON_CONSOLE"/>
         </root>
 
-        <logger name="com.spay.swop" level="INFO"/>
+        <logger name="com.spaybusiness.bank.service" level="INFO"/>
         <logger name="org.springframework.web" level="WARN"/>
         <logger name="org.hibernate.SQL" level="WARN"/>
     </springProfile>
+
+<!--    <root level="INFO">-->
+<!--        <appender-ref ref="CONSOLE"/>-->
+<!--    </root>-->
+
 </configuration>
