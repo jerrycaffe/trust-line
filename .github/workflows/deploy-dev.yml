@@ -12,9 +12,4 @@ jobs:
     steps:
       - name: Trigger Render deploy
         run: |
-          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK }}" ]; then
-            echo "RENDER_DEPLOY_HOOK is NOT set"
-            exit 1
-          else
-            echo "RENDER_DEPLOY_HOOK is set"
-          fi
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
