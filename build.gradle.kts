@@ -30,7 +30,8 @@ dependencies {
 
     implementation("com.mailersend:java-sdk:1.4.1")
 
-
+//documentation
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
 
 
     // Logging (Logback is included by default in Spring Boot)
