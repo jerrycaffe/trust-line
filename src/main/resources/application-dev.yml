@@ -29,3 +29,9 @@ email:
     api-key: ${SENDGRID_API_KEY}
   mailerSend:
     api-key: ${MAIL_SENDER_API_KEY}
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
