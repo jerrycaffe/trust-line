@@ -58,6 +58,7 @@ public class UserController {
 
 
 //  TODO:  forgot password request to generate OTP
+//    Forgot password
 //    TODO: after successfully validating OTP, reset password with new password is provided
 
 
