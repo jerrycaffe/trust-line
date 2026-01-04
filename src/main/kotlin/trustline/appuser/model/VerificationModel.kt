@@ -15,11 +15,11 @@ data class VerificationModel(
     @JdbcTypeCode(SqlTypes.UUID)
     @GeneratedValue(strategy = GenerationType.AUTO)
     val id: UUID? = null,
-    val messageId: String? = null,
-    val userId: UUID? = null,
-    val pin: String? = null,
+    var messageId: String? = null,
+    var userId: UUID? = null,
+    var pin: String? = null,
     @Enumerated(EnumType.STRING)
-    val mode: OtpModeEnum? = null,
+    var mode: OtpModeEnum? = null,
     @Enumerated(EnumType.STRING)
-    val type: VerificationType? = null
+    var type: VerificationType? = null
 ) : AuditModel()
