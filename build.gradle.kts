@@ -1,5 +1,8 @@
 plugins {
     java
+    id("org.jetbrains.kotlin.jvm") version "1.9.23"
+    id("org.jetbrains.kotlin.plugin.spring") version "1.9.23"
+    id("org.jetbrains.kotlin.plugin.jpa") version "1.9.23"
     id("org.springframework.boot") version "3.3.2"
     id("io.spring.dependency-management") version "1.1.6"
 }
@@ -11,6 +14,10 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(21)
     }
+}
+
+kotlin {
+    jvmToolchain(21)
 }
 
 configurations {
@@ -37,6 +44,7 @@ dependencies {
     // Logging (Logback is included by default in Spring Boot)
     // Optional: for JSON or advanced logging
     implementation ("net.logstash.logback:logstash-logback-encoder:7.4")
+    implementation("io.github.oshai:kotlin-logging-jvm:7.0.3")
 
 //Databases
     implementation("org.flywaydb:flyway-core:9.22.0")
@@ -46,6 +54,9 @@ dependencies {
 //    Annotation processor
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
+
+// Logging
+
 
 
 //  jwt dependencies
@@ -63,6 +74,14 @@ dependencies {
     testImplementation("com.h2database:h2")
 
 
+//    Converting to kotlin
+
+    implementation("org.jetbrains.kotlin:kotlin-stdlib")
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+
+    testImplementation("org.jetbrains.kotlin:kotlin-test")
+
 }
 
 dependencyManagement {
@@ -72,5 +91,8 @@ dependencyManagement {
 }
 
 tasks.withType<Test> {
+    useJUnitPlatform()
+}
+tasks.test {
     useJUnitPlatform()
 }
