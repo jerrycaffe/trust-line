@@ -145,7 +145,7 @@ class UserServiceImpl(
             throw BadRequestException("Token expired, initiate another verification");
 //        Update user status if it otp is for user verification
         if (verifyUser.type!! == VerificationType.REGISTER) {
-            verifyUserRegistration(otpRequest.userId!!)
+            verifyUserRegistration(otpRequest.userId)
         }
         return OtpVerificationResponse("Verification Successful", verifyUser.id);
     }
