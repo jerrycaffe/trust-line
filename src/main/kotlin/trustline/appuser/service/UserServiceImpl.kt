@@ -137,7 +137,7 @@ class UserServiceImpl(
     }
 
     override fun verifyOtp(otpRequest: OtpRequest): OtpVerificationResponse {
-        log.info("otp request received with details {}", otpRequest)
+        log.info{"otp request received with details $otpRequest"}
         val verifyUser: VerificationModel =
             emailService.getbyUserIdAndPin(otpRequest.userId!!, otpRequest.verificationId!!)
                 .orElseThrow { NotFoundException(PREV_VERIFICATION_NOT_FOUND) }
@@ -145,7 +145,7 @@ class UserServiceImpl(
             throw BadRequestException("Token expired, initiate another verification");
 //        Update user status if it otp is for user verification
         if (verifyUser.type!! == VerificationType.REGISTER) {
-            verifyUserRegistration(otpRequest.userId!!)
+            verifyUserRegistration(otpRequest.userId)
         }
         return OtpVerificationResponse("Verification Successful", verifyUser.id);
     }

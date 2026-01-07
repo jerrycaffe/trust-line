@@ -16,7 +16,7 @@ class PrincipalUser(user: User) : UserDetails {
     val authProvider: AuthProvider = user.authProvider
     private val username: String = user.email
     private val enabled: Boolean = !user.isDeleted && user.isAccountVerified
-    private val password: String = user.password
+    private val password: String = user.password!!
 
     init {
         setAuthorities(user.roles)

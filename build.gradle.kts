@@ -72,6 +72,7 @@ dependencies {
     testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.testcontainers:postgresql")
     testImplementation("com.h2database:h2")
+    testImplementation("io.mockk:mockk:1.13.11")
 
 
 //    Converting to kotlin
