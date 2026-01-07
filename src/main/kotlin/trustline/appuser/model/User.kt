@@ -40,8 +40,8 @@ data class User(
 
     @Column(name = "accountVerified")
     var isAccountVerified: Boolean = false,
-
-    var password: String,
+    @Column(name = "password", nullable = false)
+    var password: String? = null,
 
     var profileImageUrl: String? = null,
 
