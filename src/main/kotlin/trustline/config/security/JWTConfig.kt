@@ -7,7 +7,7 @@ import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Service
-import trustline.appuser.model.User
+import trustline.appuser.model.UserModel
 import java.util.*
 import javax.crypto.SecretKey
 
@@ -21,7 +21,7 @@ class JWTConfig(
     private fun setKey(): SecretKey =
         Keys.secretKeyFor(SignatureAlgorithm.HS256)
 
-    fun generateToken(user: User): String =
+    fun generateToken(user: UserModel): String =
         Jwts.builder()
             .setSubject(user.email)
             .claim("roles", user.roles)

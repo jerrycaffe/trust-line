@@ -36,7 +36,7 @@ enum class VerificationType {
 }
 
 enum class Status {
-    OTP_VALIDATION, DISABLED, VERIFIED
+    OTP_VALIDATION, DISABLED, VERIFIED, COMPLETED, DISCONTINUED
 }
 
 enum class AuthProvider {

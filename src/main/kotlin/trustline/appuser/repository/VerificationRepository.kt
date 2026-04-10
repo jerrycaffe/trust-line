@@ -2,7 +2,7 @@ package trustline.appuser.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
-import trustline.appuser.model.VerificationModel
+import trustline.notification.model.VerificationModel
 import java.util.*
 
 @Repository

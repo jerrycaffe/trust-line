@@ -3,7 +3,7 @@ package trustline.appuser.service;
 import trustline.appuser.dto.EmailRequest;
 import trustline.appuser.dto.OtpModeEnum
 import trustline.appuser.dto.VerificationType
-import trustline.appuser.model.VerificationModel
+import trustline.notification.model.VerificationModel
 import java.util.*
 
 interface EmailService {

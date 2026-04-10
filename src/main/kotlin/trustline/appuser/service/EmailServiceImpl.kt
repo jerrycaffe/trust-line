@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service
 import trustline.appuser.dto.EmailRequest
 import trustline.appuser.dto.OtpModeEnum
 import trustline.appuser.dto.VerificationType
-import trustline.appuser.model.VerificationModel
+import trustline.notification.model.VerificationModel
 import trustline.appuser.repository.VerificationRepository
 import java.util.*
 

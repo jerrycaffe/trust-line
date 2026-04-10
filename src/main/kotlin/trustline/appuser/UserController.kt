@@ -21,7 +21,7 @@ class UserController(
     @PostMapping("/register")
     fun register(@RequestBody @Validated registerUserDto: RegisterUserDto): UserResponseDto {
         val createUserRes = userService.createUser(registerUserDto)
-        return UserResponseDto.fromUser(createUserRes.user!!, createUserRes.otpId!!);
+        return UserResponseDto.fromUser(createUserRes?.user!!, createUserRes.otpId!!);
     }
 
     @PostMapping("/verify-otp")

@@ -13,7 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.test.util.ReflectionTestUtils
 import trustline.appuser.dto.*
 import trustline.appuser.model.User
-import trustline.appuser.model.VerificationModel
+import trustline.notification.model.VerificationModel
 import trustline.appuser.repository.UserRepository
 import trustline.appuser.service.EmailServiceImpl
 import trustline.appuser.service.UserServiceImpl

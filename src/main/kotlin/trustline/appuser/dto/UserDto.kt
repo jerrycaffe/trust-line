@@ -3,11 +3,11 @@ package trustline.appuser.dto
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
-import trustline.appuser.model.User
+import trustline.appuser.model.UserModel
 import java.util.*
 
 data class CreateUserRes(
-     val user: User? = null,
+     val user: UserModel? = null,
      val otpId: UUID? = null
 )
 
@@ -33,7 +33,7 @@ data class UserResponseDto(
 ) {
     companion object {
 
-        fun fromUser(user: User, otpId: UUID): UserResponseDto =
+        fun fromUser(user: UserModel, otpId: UUID): UserResponseDto =
             UserResponseDto(
                 id = user.id,
                 email = user.email,
@@ -43,7 +43,7 @@ data class UserResponseDto(
                 emailVerified = user.isAccountVerified
             )
 
-        fun fromUser(user: User): UserResponseDto =
+        fun fromUser(user: UserModel): UserResponseDto =
             UserResponseDto(
                 id = user.id,
                 email = user.email,

@@ -6,11 +6,12 @@ import org.hibernate.type.SqlTypes
 import trustline.appuser.dto.AuthProvider
 import trustline.appuser.dto.Gender
 import trustline.appuser.dto.Status
+import trustline.institution.model.InstitutionModel
 import java.util.*
 
 @Entity
 @Table(name = "users")
-data class User(
+data class UserModel(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @JdbcTypeCode(SqlTypes.UUID)
@@ -44,6 +45,10 @@ data class User(
     var password: String? = null,
 
     var profileImageUrl: String? = null,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "institution_id")
+    val institution: InstitutionModel,
 
     @ManyToMany
     @JoinTable(

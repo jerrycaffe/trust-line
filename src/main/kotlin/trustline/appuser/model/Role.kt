@@ -19,7 +19,7 @@ open class Role(
     open var description: String? = null,
 
     @ManyToMany(mappedBy = "roles")
-    open var users: MutableSet<User> = mutableSetOf(),
+    open var users: MutableSet<UserModel> = mutableSetOf(),
 
     @ManyToMany
     @JoinTable(

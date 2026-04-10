@@ -10,8 +10,8 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import trustline.appuser.Utility
 import trustline.appuser.dto.*
-import trustline.appuser.model.User
-import trustline.appuser.model.VerificationModel
+import trustline.appuser.model.UserModel
+import trustline.notification.model.VerificationModel
 import trustline.appuser.repository.UserRepository
 import trustline.config.exception.*
 import trustline.config.security.CustomUserDetailsService
@@ -36,19 +36,20 @@ class UserServiceImpl(
     val RESEND_OTP = "Trustline Resend OTP";
     val PREV_VERIFICATION_NOT_FOUND = "No Previous verification found";
 
-    override fun createUser(user: RegisterUserDto): CreateUserRes {
+    override fun createUser(user: RegisterUserDto): CreateUserRes? {
         val prevUser = userRepository.findByEmailOrPhoneNumber(user.email!!, user.password!!.trim())
         val otp: String = generateOtpPin();
         if (prevUser.isPresent) return handleUserExists(prevUser.get(), user, otp)
 
 //      TODO send OTP to user
-        val newUser: User = newUser(user)
-        val savedUser: User = userRepository.save(newUser)
-
-        val emailVerification: VerificationModel? =
-            generateOtp(savedUser, otp, ACTIVATE_ACCOUNT, VerificationType.REGISTER)
-
-        return buildUserResponse(savedUser, emailVerification!!);
+//        val newUser: UserModel = newUser(user)
+//        val savedUser: UserModel = userRepository.save(newUser)
+//
+//        val emailVerification: VerificationModel? =
+//            generateOtp(savedUser, otp, ACTIVATE_ACCOUNT, VerificationType.REGISTER)
+//
+//        return buildUserResponse(savedUser, emailVerification!!);
+        return null
     }
 
     fun generateOtpPin(): String {
@@ -56,7 +57,7 @@ class UserServiceImpl(
     }
 
     fun generateOtp(
-        user: User,
+        user: UserModel,
         otp: String,
         subject: String,
         verificationType: VerificationType
@@ -86,7 +87,7 @@ class UserServiceImpl(
     }
 
 
-    fun handleUserExists(existingUser: User, registerUserDto: RegisterUserDto, otp: String): CreateUserRes {
+    fun handleUserExists(existingUser: UserModel, registerUserDto: RegisterUserDto, otp: String): CreateUserRes {
         val emailMatches: Boolean = existingUser.email == registerUserDto.email
         val phoneMatches = existingUser.phoneNumber == registerUserDto.phoneNumber
 
@@ -102,21 +103,21 @@ class UserServiceImpl(
 
     }
 
-    fun buildUserResponse(user: User, verification: VerificationModel): CreateUserRes {
+    fun buildUserResponse(user: UserModel, verification: VerificationModel): CreateUserRes {
         return CreateUserRes(user, verification.id)
     }
 
 
-    fun newUser(user: RegisterUserDto): User {
-        return User(
-            email = user.email!!,
-            authProvider = AuthProvider.LOCAL,
-            password = passwordEncoder.encode(user.password),
-            isDeleted = false,
-            status = Status.OTP_VALIDATION,
-            phoneNumber = user.phoneNumber
-        )
-    }
+//    fun newUser(user: RegisterUserDto): UserModel {
+//        return UserModel(
+//            email = user.email!!,
+//            authProvider = AuthProvider.LOCAL,
+//            password = passwordEncoder.encode(user.password),
+//            isDeleted = false,
+//            status = Status.OTP_VALIDATION,
+//            phoneNumber = user.phoneNumber
+//        )
+//    }
 
 
     override fun login(loginReq: LoginReq): LoginRes<UserResponseDto> {
@@ -126,7 +127,7 @@ class UserServiceImpl(
             )
 
         );
-        val user: User =
+        val user: UserModel =
             userRepository.findByEmail(loginReq.userName!!).orElseThrow { UsernameNotFoundException(loginReq.userName) }
         val loginUser = LoginRes(
             data = UserResponseDto.fromUser(user),
@@ -178,7 +179,7 @@ class UserServiceImpl(
         return ForgotPasswordRes(generatedOtp?.id)
     }
 
-    override fun resetPassword(resetPasswordReq: ResetPasswordReq): User {
+    override fun resetPassword(resetPasswordReq: ResetPasswordReq): UserModel {
 
         val user = userRepository.findByEmail(resetPasswordReq.userName!!)
             .orElseThrow {
