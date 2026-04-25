@@ -16,10 +16,11 @@ data class CommentsModel(
     val id: UUID? = null,
     @Column(name = "comment")
     val comment: String,
-    @OneToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "case_id")
     val case: CasesModel,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "commenter")
-    val commenter: UserModel
+    val commenter: UserModel,
+   
 ) : AuditModel()

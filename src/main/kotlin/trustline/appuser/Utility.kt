@@ -83,5 +83,55 @@ object Utility {
             VerificationType.RESET_PASSWORD ->
                 forgotPasswordEmailTemplate(user, otp)
         }
+
+    fun inviteEmailTemplate(email: String, tempPassword: String, roleName: String): String {
+        return """
+            <div style='max-width:600px;margin:auto;background-color:#ffffff;border-radius:8px;
+            box-shadow:0 0 5px rgba(0,0,0,0.05);padding:30px 20px;font-family:Segoe UI,sans-serif;'>
+              <div style='text-align:center;padding-bottom:10px;'>
+                <h1 style='color:#837AEF;font-size:24px;margin:0;'>Trustlne</h1>
+              </div>
+              <div style='font-size:16px;color:#333;line-height:1.6;padding:10px 0;'>
+                <p>Hello, <strong>${email}</strong></p>
+                <p>You have been invited to join <strong>Trustlne</strong> as a <strong>${roleName}</strong>.</p>
+                <p>Your temporary password is:</p>
+              </div>
+              <div style='text-align:center;background-color:#CD8FFD22;color:#837AEF;
+              font-size:22px;font-weight:bold;letter-spacing:4px;margin:20px auto;padding:15px 25px;
+              border-radius:6px;width:fit-content;'>
+                ${tempPassword}
+              </div>
+              <div style='font-size:16px;color:#333;line-height:1.6;padding:10px 0;'>
+                <p>Please login and change your password immediately.</p>
+              </div>
+              <div style='font-size:13px;color:#777;text-align:center;margin-top:30px;'>
+                &copy; 2026 Trustlne. All rights reserved.
+              </div>
+            </div>
+        """.trimIndent()
+    }
+
+    fun caseAcknowledgementEmailTemplate(email: String, caseId: String): String {
+        return """
+            <div style='max-width:600px;margin:auto;background-color:#ffffff;border-radius:8px;
+            box-shadow:0 0 5px rgba(0,0,0,0.05);padding:30px 20px;font-family:Segoe UI,sans-serif;'>
+              <div style='text-align:center;padding-bottom:10px;'>
+                <h1 style='color:#837AEF;font-size:24px;margin:0;'>Trustline</h1>
+              </div>
+              <div style='font-size:16px;color:#333;line-height:1.6;padding:10px 0;'>
+                <p>Hello, <strong>${email}</strong></p>
+                <p>Your case has been successfully reported and logged with reference <strong>${caseId}</strong>.</p>
+                <p>We want to assure you that the <strong>confidentiality of your case is our utmost priority</strong>. 
+                All information provided will be handled with the strictest confidence and your 
+                <strong>privacy will be fully protected</strong> throughout the process.</p>
+                <p>Our team will review your report and take appropriate action. You will be notified of any updates regarding your case.</p>
+                <p>Thank you for trusting us with this matter.</p>
+              </div>
+              <div style='font-size:13px;color:#777;text-align:center;margin-top:30px;'>
+                &copy; 2026 Trustline. All rights reserved.
+              </div>
+            </div>
+        """.trimIndent()
+    }
 }
 

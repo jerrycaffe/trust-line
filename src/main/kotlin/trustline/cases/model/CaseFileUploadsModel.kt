@@ -14,7 +14,7 @@ data class CaseFileUploadsModel(
     @GeneratedValue(strategy = GenerationType.AUTO)
     val id: UUID? = null,
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "file_uploadId")
+    @JoinColumn(name = "file_upload_id")
     val fileUpload: FileUploadsModel,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "case_id")

@@ -34,8 +34,9 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-websocket")
 
-    implementation("com.mailersend:java-sdk:1.4.1")
+    implementation("com.resend:resend-java:2.0.0")
 
 //documentation
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0")
@@ -63,6 +64,9 @@ dependencies {
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5")
+
+//  cloudinary
+    implementation("com.cloudinary:cloudinary-http44:1.36.0")
 
 //    Test dependencies
     testImplementation ("org.mockito:mockito-junit-jupiter:5.11.0")

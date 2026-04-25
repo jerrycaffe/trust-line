@@ -50,12 +50,57 @@ data class UserModel(
     @JoinColumn(name = "institution_id")
     val institution: InstitutionModel,
 
-    @ManyToMany
+    @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "users_roles",
         joinColumns = [JoinColumn(name = "user_id")],
         inverseJoinColumns = [JoinColumn(name = "role_id")]
     )
-    var roles: MutableSet<Role> = mutableSetOf()
+    var roles: MutableSet<RoleModel> = mutableSetOf()
 
 ) : AuditModel()
+
+data class UserResponseDto(
+    val otpId: UUID? = null,
+    val userId: UUID,
+    val email: String,
+    val phoneNumber: String?,
+    val firstName: String?,
+    val lastName: String?,
+    val gender: Gender?,
+    val status: Status?,
+    val isAccountVerified: Boolean
+
+)
+
+fun UserModel.toResponseDto(otpId: UUID? = null) = UserResponseDto(
+    otpId,
+    userId = id!!,
+    email,
+    phoneNumber,
+    firstName,
+    lastName,
+    gender,
+    status,
+    isAccountVerified
+)
+
+data class ProfileResponseDto(
+    val userId: UUID,
+    val email: String,
+    val phoneNumber: String?,
+    val firstName: String?,
+    val lastName: String?,
+    val gender: Gender?,
+    val profileImageUrl: String?
+)
+
+fun UserModel.toProfileResponse() = ProfileResponseDto(
+    userId = id!!,
+    email = email,
+    phoneNumber = phoneNumber,
+    firstName = firstName,
+    lastName = lastName,
+    gender = gender,
+    profileImageUrl = profileImageUrl
+)

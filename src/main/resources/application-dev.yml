@@ -24,11 +24,18 @@ firebase:
   config:
     location: ${FIREBASE_CONFIG_LOCATION}
 
+cloudinary:
+  cloud-name: ddj3hjr57
+  api-key: ${CLOUDINARY_API_KEY}
+  api-secret: ${CLOUDINARY_SERET}
+
 email:
   sendgrid:
     api-key: ${SENDGRID_API_KEY}
   mailerSend:
     api-key: ${MAIL_SENDER_API_KEY}
+  resend:
+    api-key: ${RESEND_API_KEY}
 
 springdoc:
   api-docs:

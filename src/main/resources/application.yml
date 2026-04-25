@@ -34,3 +34,8 @@ email:
   mailerSend:
     api-key:
 
+cloudinary:
+  cloud-name:
+  api-key:
+  api-secret:
+

@@ -20,5 +20,7 @@ data class NotificationsModel(
     val message: String,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "destination_id")
-    val user: UserModel
+    val user: UserModel,
+    @Column(name = "is_read")
+    var isRead: Boolean = false
 ) : AuditModel()

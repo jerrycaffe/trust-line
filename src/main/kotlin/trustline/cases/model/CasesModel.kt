@@ -4,7 +4,8 @@ import jakarta.persistence.*
 import org.hibernate.annotations.JdbcTypeCode
 import org.hibernate.type.SqlTypes
 import trustline.appuser.dto.Status
-import trustline.appuser.model.*
+import trustline.appuser.model.AuditModel
+import trustline.appuser.model.UserModel
 import trustline.institution.model.InstitutionModel
 import trustline.institution.model.UnitModel
 import java.time.LocalDateTime
@@ -32,11 +33,17 @@ data class CasesModel(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "reported_by")
     val user: UserModel,
+    @Enumerated(EnumType.STRING)
     @Column(name = "status")
-    val caseStatus: Status,
+    var caseStatus: Status,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "current_unit")
-    val currentUnit: UnitModel,
+    var currentUnit: UnitModel? = null,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "next_unit")
+    var nextUnit: UnitModel? = null,
+    @Column(name = "closed")
+    var isClosed: Boolean = false,
     @Column(name = "deleted")
-    val deleted: Boolean? = false
+    var isDeleted: Boolean? = false
 ) : AuditModel()

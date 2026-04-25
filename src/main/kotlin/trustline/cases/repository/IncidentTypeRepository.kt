@@ -7,8 +7,9 @@ import java.util.*
 
 @Repository
 interface IncidentTypeRepository : JpaRepository<IncidentTypesModel, UUID> {
-    fun findByNameIgnoreCase(name: String): Optional<IncidentTypesModel>
-    fun findByIdAndIsDeletedFalse(id: UUID): Optional<IncidentTypesModel>
-    fun findAllByIsDeletedFalse(): List<IncidentTypesModel>
-    fun existsByNameIgnoreCase(name: String): Boolean
+    fun findByNameAndInstitutionId(name: String, institutionId: UUID): IncidentTypesModel?
+    fun existsByNameAndInstitutionId(name: String, institutionId: UUID): Boolean
+    fun findByIdAndDeletedFalse(id: UUID): IncidentTypesModel?
+    fun findByIdAndInstitutionIdAndDeletedFalse(id: UUID, institutionId: UUID): IncidentTypesModel?
+    fun findByInstitutionIdAndDeletedFalse(institutionId: UUID): List<IncidentTypesModel>
 }

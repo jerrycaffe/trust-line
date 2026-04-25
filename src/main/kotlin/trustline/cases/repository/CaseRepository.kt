@@ -7,8 +7,7 @@ import java.util.*
 
 @Repository
 interface CaseRepository : JpaRepository<CasesModel, UUID> {
-    fun findByIdAndIsDeletedFalse(id: UUID): Optional<CasesModel>
-    fun findAllByIsDeletedFalse(): List<CasesModel>
-    fun findAllByReportedByAndIsDeletedFalse(reportedBy: UUID): List<CasesModel>
-    fun findAllByIncidentTypeIdAndIsDeletedFalse(incidentTypeId: UUID): List<CasesModel>
+    fun findByUserIdAndInstitutionIdAndIsDeletedFalse(userId: UUID, institutionId: UUID): List<CasesModel>
+    fun findByInstitutionIdAndIsDeletedFalse(institutionId: UUID): List<CasesModel>
+    fun findByIdAndInstitutionIdAndIsDeletedFalse(id: UUID, institutionId: UUID): CasesModel?
 }

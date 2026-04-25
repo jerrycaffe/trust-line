@@ -1,70 +1,65 @@
 package trustline.cases.controller
 
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
-import trustline.appuser.repository.UserRepository
+import org.springframework.http.MediaType
+import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.validation.annotation.Validated
+import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
+import trustline.cases.dto.CaseResponseDto
+import trustline.cases.dto.CommentResponseDto
+import trustline.cases.dto.CreateCaseDto
+import trustline.cases.dto.CreateCommentRequest
 import trustline.cases.service.CaseService
+import java.util.*
 
 @RestController
 @RequestMapping("api/v1/cases")
 class CaseController(
-    private val caseService: CaseService,
-    private val userRepository: UserRepository
+    private val caseService: CaseService
 ) {
 
-//    @PostMapping
-//    fun create(
-//        @Validated @RequestBody dto: CreateCaseDto,
-//        @AuthenticationPrincipal userDetails: UserDetails
-//    ): ResponseEntity<CaseResponseDto> {
-//        val user = userRepository.findByEmail(userDetails.username)
-//            .orElseThrow { NotFoundException("User not found") }
-//        val response = caseService.create(dto, user.id!!)
-//        return ResponseEntity.status(HttpStatus.CREATED).body(response)
-//    }
+    @PostMapping(consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    fun create(
+        @Validated @RequestPart("case") request: CreateCaseDto,
+        @RequestPart("files", required = false) files: List<MultipartFile>?
+    ): CaseResponseDto {
+        return caseService.createCase(request, files)
+    }
 
-//    @PutMapping("/{id}")
-//    fun update(
-//        @PathVariable id: UUID,
-//        @Validated @RequestBody dto: UpdateCaseDto
-//    ): ResponseEntity<CaseResponseDto> {
-//        val response = caseService.update(id, dto)
-//        return ResponseEntity.ok(response)
-//    }
-//
-//    @GetMapping("/{id}")
-//    fun getById(@PathVariable id: UUID): ResponseEntity<CaseResponseDto> {
-//        val response = caseService.getById(id)
-//        return ResponseEntity.ok(response)
-//    }
+    @GetMapping("/{id}")
+    fun getById(@PathVariable id: UUID): CaseResponseDto {
+        return caseService.getCaseById(id)
+    }
 
-//    @GetMapping
-//    fun getAll(): ResponseEntity<List<CaseResponseDto>> {
-//        val response = caseService.getAll()
-//        return ResponseEntity.ok(response)
-//    }
+    @GetMapping("/my-cases")
+    fun getMyCases(): List<CaseResponseDto> {
+        return caseService.getMyCases()
+    }
 
-//    @GetMapping("/my-cases")
-//    fun getMyCases(
-//        @AuthenticationPrincipal userDetails: UserDetails
-//    ): ResponseEntity<List<CaseResponseDto>> {
-//        val user = userRepository.findByEmail(userDetails.username)
-//            .orElseThrow { NotFoundException("User not found") }
-//        val response = caseService.getByReportedBy(user.id!!)
-//        return ResponseEntity.ok(response)
-//    }
+    @GetMapping
+    @PreAuthorize("hasAuthority('Administrator')")
+    fun getAllCases(): List<CaseResponseDto> {
+        return caseService.getAllCases()
+    }
 
-//    @GetMapping("/by-incident-type/{incidentTypeId}")
-//    fun getByIncidentType(
-//        @PathVariable incidentTypeId: UUID
-//    ): ResponseEntity<List<CaseResponseDto>> {
-//        val response = caseService.getByIncidentType(incidentTypeId)
-//        return ResponseEntity.ok(response)
-//    }
+    @PostMapping("/{caseId}/comments")
+    @PreAuthorize("hasAuthority('Administrator')")
+    fun addComment(
+        @PathVariable caseId: UUID,
+        @Validated @RequestBody request: CreateCommentRequest
+    ): CommentResponseDto {
+        return caseService.addComment(caseId, request)
+    }
 
-//    @DeleteMapping("/{id}")
-//    fun delete(@PathVariable id: UUID): ResponseEntity<Void> {
-//        caseService.delete(id)
-//        return ResponseEntity.noContent().build()
-//    }
+    @PutMapping("/{caseId}/close")
+    @PreAuthorize("hasAuthority('Administrator')")
+    fun closeCase(@PathVariable caseId: UUID): CaseResponseDto {
+        return caseService.closeCase(caseId)
+    }
+
+    @PutMapping("/{caseId}/reopen")
+    @PreAuthorize("hasAuthority('Administrator')")
+    fun reopenCase(@PathVariable caseId: UUID): CaseResponseDto {
+        return caseService.reopenCase(caseId)
+    }
 }
