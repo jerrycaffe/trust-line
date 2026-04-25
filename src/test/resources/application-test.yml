@@ -12,7 +12,7 @@ spring:
       ddl-auto: validate
 
   flyway:
-    enabled: false
+    enabled: true
     clean-disabled: false
 
 
@@ -26,7 +26,12 @@ firebase:
     location: firebase-location
 
 email:
-  sendgrid:
-    api-key: sendgrid-api-key
+  resend:
+    api-key: resend-test-api-key
+
+cloudinary:
+  cloud-name: test-cloud
+  api-key: test-api-key
+  api-secret: test-api-secret
   mailerSend:
     api-key: mailer-send

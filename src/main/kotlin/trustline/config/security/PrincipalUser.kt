@@ -4,11 +4,11 @@ import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 import trustline.appuser.dto.AuthProvider
-import trustline.appuser.model.Role
-import trustline.appuser.model.User
+import trustline.appuser.model.RoleModel
+import trustline.appuser.model.UserModel
 import java.util.*
 
-class PrincipalUser(user: User) : UserDetails {
+class PrincipalUser(user: UserModel) : UserDetails {
 
     private val authorities: MutableSet<GrantedAuthority> = HashSet()
 
@@ -22,7 +22,7 @@ class PrincipalUser(user: User) : UserDetails {
         setAuthorities(user.roles)
     }
 
-    private fun setAuthorities(roles: Set<Role>?) {
+    private fun setAuthorities(roles: Set<RoleModel>?) {
         roles ?: return
 
         for (role in roles) {

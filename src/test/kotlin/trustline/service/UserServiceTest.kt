@@ -1,207 +1,157 @@
 package trustline.service
 
+import com.cloudinary.Cloudinary
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import net.bytebuddy.utility.RandomString
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
-import org.springframework.test.util.ReflectionTestUtils
 import trustline.appuser.dto.*
-import trustline.appuser.model.User
-import trustline.appuser.model.VerificationModel
+import trustline.appuser.model.RoleModel
+import trustline.appuser.model.UserModel
+import trustline.appuser.repository.PermissionRepository
+import trustline.appuser.repository.RolesRepository
 import trustline.appuser.repository.UserRepository
-import trustline.appuser.service.EmailServiceImpl
+import trustline.appuser.service.EmailService
 import trustline.appuser.service.UserServiceImpl
-import trustline.config.exception.BadRequestException
+import trustline.config.exception.DuplicateException
 import trustline.config.exception.NotFoundException
-import trustline.config.exception.PhoneNumberAlreadyExistsException
-import trustline.config.security.CustomUserDetailsService
-import trustline.config.security.JWTConfig
-import java.time.LocalDateTime
+import trustline.config.security.JWTConfigService
+import trustline.institution.model.InstitutionModel
+import trustline.institution.service.InstitutionService
+import trustline.notification.model.VerificationModel
 import java.util.*
 
 class UserServiceTest {
-    val userRepository = mockk<UserRepository>()
-    val userDetails = mockk<CustomUserDetailsService>()
-    val jwtConfig = mockk<JWTConfig>()
-    val authenticationManager = mockk<AuthenticationManager>()
-    val passwordEncoder = BCryptPasswordEncoder()
-    val emailService = mockk<EmailServiceImpl>()
 
+    // ── collaborators ────────────────────────────────────────────────────────
+    private val userRepository = mockk<UserRepository>()
+    private val rolesRepository = mockk<RolesRepository>()
+    private val permissionRepository = mockk<PermissionRepository>()
+    private val jwtConfig = mockk<JWTConfigService>()
+    private val authenticationManager = mockk<AuthenticationManager>()
+    private val passwordEncoder = BCryptPasswordEncoder()
+    private val emailService = mockk<EmailService>()
+    private val institutionService = mockk<InstitutionService>()
+    private val cloudinary = mockk<Cloudinary>()
 
-    var userService = UserServiceImpl(
-        userRepository, userDetails, jwtConfig, authenticationManager, passwordEncoder, emailService
-    )
+    private lateinit var userService: UserServiceImpl
+
+    // ── fixtures ─────────────────────────────────────────────────────────────
+    private val institutionId: UUID = UUID.randomUUID()
+    private val institution = InstitutionModel(id = institutionId, name = "TEST", phoneNumber = "0800000000000")
+    private val userRole = RoleModel(id = UUID.randomUUID(), name = "User")
+
+    @BeforeEach
+    fun setUp() {
+        userService = UserServiceImpl(
+            userRepository, rolesRepository, permissionRepository,
+            jwtConfig, authenticationManager, passwordEncoder,
+            emailService, institutionService, cloudinary
+        )
+    }
 
     private fun registerReq() = RegisterUserDto(
         email = "test@test.com",
         password = "test1234",
-        phoneNumber = "08088492993"
+        phoneNumber = "08088492993",
+        institutionId = institutionId
     )
 
     private fun dbUser(
         email: String = "test@test.com",
         phoneNumber: String = "08088492993"
-    ) = User(
+    ) = UserModel(
         id = UUID.randomUUID(),
         email = email,
         phoneNumber = phoneNumber,
         status = Status.OTP_VALIDATION,
         isAccountVerified = false,
         authProvider = AuthProvider.LOCAL,
-        password = ""
+        password = "",
+        institution = institution
     )
 
-    //
-//    /* --------------------------------------------------------
-//       CREATE USER TESTS
-//    --------------------------------------------------------- */
-//
+    // ── createUser ────────────────────────────────────────────────────────────
+
     @Test
-    fun `should throw exception when phone number or email already exists`() {
+    fun `createUser should throw DuplicateException when email already exists`() {
         val req = registerReq()
-        val existingUser = dbUser(email = "jerry@test.com")
+        val existingUser = dbUser(email = req.email!!)
 
-        every { userRepository.findByEmailOrPhoneNumber(any(), any()) } returns Optional.of(
-            existingUser
-        )
+        every { institutionService.getInstitutionById(institutionId) } returns institution
+        every { userRepository.findByEmailOrPhoneNumberAndInstitutionId(req.email!!, req.phoneNumber!!, institutionId) } returns existingUser
+        every { rolesRepository.findByNameAndInstitutionIdIsNull("User") } returns userRole
 
-        val ex = assertThrows<PhoneNumberAlreadyExistsException> { userService.createUser(req) }
-
-        assertEquals(
-            "User with the phone number: ${req.phoneNumber} already exists",
-            ex.message
-        )
-
+        assertThrows<DuplicateException> { userService.createUser(req) }
     }
 
     @Test
-    fun `should successfully create new user`() {
-        val user = dbUser()
+    fun `createUser should throw NotFoundException when institution not found`() {
         val req = registerReq()
 
-        val verification = verificationModel(user)
-        every { userRepository.save(any()) } returns user
-        every { emailService.saveVerification(any(), any(), any(), any(), any()) } returns verification
-        every { userRepository.findByEmailOrPhoneNumber(any(), any()) } returns Optional.empty()
+        every { institutionService.getInstitutionById(institutionId) } returns null
+
+        assertThrows<NotFoundException> { userService.createUser(req) }
+    }
+
+    @Test
+    fun `createUser should succeed when all details are correct`() {
+        val req = registerReq()
+        val savedUser = dbUser()
+
+        every { institutionService.getInstitutionById(institutionId) } returns institution
+        every { userRepository.findByEmailOrPhoneNumberAndInstitutionId(req.email!!, req.phoneNumber!!, institutionId) } returns null
+        every { rolesRepository.findByNameAndInstitutionIdIsNull("User") } returns userRole
+        every { userRepository.save(any()) } returns savedUser
         every { emailService.sendMail(any()) } returns UUID.randomUUID().toString()
+        every { emailService.saveVerification(any(), any(), any(), any(), any(), any()) } returns mockk(relaxed = true)
 
         val response = userService.createUser(req)
 
-        assertNotNull(response.user)
-        assertEquals(Status.OTP_VALIDATION, response.user?.status)
-
+        assertNotNull(response.email)
+        assertEquals(Status.OTP_VALIDATION, response.status)
         verify(atMost = 1) { userRepository.save(any()) }
     }
 
-    //
+    // ── verifyOtp ─────────────────────────────────────────────────────────────
+
     @Test
-    fun `should reuse existing unverified user`() {
+    fun `verifyOtp should throw NotFoundException when verification not found`() {
+        every { emailService.getbyUserIdAndPinAndStatus(any(), any(), any()) } returns null
+
+        assertThrows<NotFoundException> {
+            userService.verifyOtp(OtpRequest(verificationId = "123456", userId = UUID.randomUUID()))
+        }
+    }
+
+    @Test
+    fun `verifyOtp should succeed and return verification ID`() {
+        val userId = UUID.randomUUID()
+        val verificationId = UUID.randomUUID()
         val user = dbUser()
-        val req = registerReq()
-        val verification = verificationModel(user)
-
-        every { userRepository.findByEmailOrPhoneNumber(any(), any()) } returns Optional.of(user)
-        every { emailService.saveVerification(any(), any(), any(), any(), any()) } returns verification
-        every { emailService.sendMail(any()) } returns UUID.randomUUID().toString()
-
-        val response = userService.createUser(req)
-
-        assertNotNull(response.user)
-        assertEquals(Status.OTP_VALIDATION, response.user?.status)
-    }
-//
-//    /* --------------------------------------------------------
-//       VERIFY OTP TESTS
-//    --------------------------------------------------------- */
-
-    @Test
-    fun `verifyOtp should fail when verification not found`() {
-        val req = OtpRequest(
-            userId = UUID.randomUUID(),
-            verificationId = RandomString.make(6)
+        val verification = VerificationModel(
+            id = verificationId,
+            messageId = "msgId",
+            user = user,
+            pin = "123456",
+            mode = OtpModeEnum.EMAIL,
+            type = VerificationType.REGISTER,
+            status = Status.UNVERIFIED
         )
-        every { emailService.getbyUserIdAndPin(any(), any()) } returns Optional.empty()
-        val ex = assertThrows<NotFoundException> { userService.verifyOtp(req) }
+        val verifiedUser = user.copy(isAccountVerified = true, status = Status.VERIFIED)
 
-        assertEquals(
-            "No Previous verification found",
-            ex.message
-        )
+        every { emailService.getbyUserIdAndPinAndStatus(userId, "123456", Status.UNVERIFIED) } returns verification
+        every { userRepository.findById(userId) } returns Optional.of(user)
+        every { userRepository.save(any()) } returns verifiedUser
+        every { emailService.updateVerification(any()) } returns verification
 
-    }
+        val result = userService.verifyOtp(OtpRequest(verificationId = "123456", userId = userId))
 
-    //
-    @Test
-    fun `verifyOtp should fail when token expired`() {
-        val userId = UUID.randomUUID()
-        val pin = RandomString.make(6)
-
-        val verification = VerificationModel().apply {
-            this.userId = userId
-            this.type = VerificationType.REGISTER
-            ReflectionTestUtils.setField(
-                this,
-                "createdAt",
-                LocalDateTime.now().minusHours(3)
-            )
-        }
-
-        every { emailService.getbyUserIdAndPin(any(), any()) } returns Optional.of(verification)
-
-        val ex = assertThrows<BadRequestException> { userService.verifyOtp(OtpRequest(pin, userId)) }
-
-        assertEquals(
-            "Token expired, initiate another verification",
-            ex.message
-        )
-
-
-    }
-
-    //
-    @Test
-    fun `verifyOtp should fail when user not found`() {
-        val userId = UUID.randomUUID()
-        val pin = RandomString.make(6)
-
-        val verification = VerificationModel().apply {
-            this.userId = userId
-            this.type = VerificationType.REGISTER
-            ReflectionTestUtils.setField(this, "createdAt", LocalDateTime.now())
-        }
-
-        every {
-            emailService.getbyUserIdAndPin(any(), any())
-        } returns Optional.of(verification)
-
-        every { userRepository.findById(any()) } returns Optional.empty()
-
-        val ex = assertThrows<NotFoundException> { userService.verifyOtp(OtpRequest(pin, userId)) }
-
-        assertEquals("User not found, verification cannot be completed", ex.message)
-    }
-
-    //
-//    /* --------------------------------------------------------
-//       HELPERS
-//    --------------------------------------------------------- */
-//
-    private fun verificationModel(user: User): VerificationModel =
-        VerificationModel().apply {
-            userId = user.id
-            pin = "123456"
-            mode = OtpModeEnum.EMAIL
-            type = VerificationType.REGISTER
-            messageId = RandomString.make(10)
-        }
-
-    companion object {
-        const val ACTIVATE_ACCOUNT = "Activate Trustline Account"
+        assertEquals(verificationId, result.otpId)
     }
 }

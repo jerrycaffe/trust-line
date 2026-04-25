@@ -1,49 +1,47 @@
 package trustline.appuser.service;
 
-import com.mailersend.sdk.MailerSend
-import com.mailersend.sdk.emails.Email
-import com.mailersend.sdk.exceptions.MailerSendException
+import com.resend.Resend
+import com.resend.core.exception.ResendException
+import com.resend.services.emails.model.SendEmailRequest
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import trustline.appuser.dto.EmailRequest
 import trustline.appuser.dto.OtpModeEnum
+import trustline.appuser.dto.Status
 import trustline.appuser.dto.VerificationType
-import trustline.appuser.model.VerificationModel
+import trustline.appuser.model.UserModel
 import trustline.appuser.repository.VerificationRepository
+import trustline.notification.model.VerificationModel
 import java.util.*
+
 
 @Service
 class EmailServiceImpl(
     private val verificationRepository: VerificationRepository,
-    @Value("\${email.mailerSend.api-key}")
+    @Value("\${email.resend.api-key}")
     private val apiKey: String
 ) : EmailService {
 
     private val log = KotlinLogging.logger {}
     override fun sendMail(emailRequest: EmailRequest): String? {
+        val resend = Resend(apiKey)
+
+        val params = SendEmailRequest.builder()
+            .from("admin@trustline.com.ng")
+            .to(emailRequest.recipientEmail)
+            .subject(emailRequest.subject)
+            .html(emailRequest.htmlTemplate)
+            .build()
+
         var messageId: String? = null
 
-        val email = Email().apply {
-            setFrom("Trustline Group", "admin@trustline.com.ng")
-            addRecipient(
-                emailRequest.recipientName,
-                emailRequest.recipientEmail
-            )
-            subject = emailRequest.subject
-            html = emailRequest.htmlTemplate
-        }
-
-        val mailerSend = MailerSend().apply {
-            token = apiKey
-        }
 
         try {
-            val response = mailerSend.emails().send(email)
-            messageId = response.messageId
-            println(response.messageId)
-        } catch (e: MailerSendException) {
-            log.error { e.message }
+            val resendResponse = resend.emails().send(params)
+            messageId = resendResponse.id
+        } catch (e: ResendException) {
+            log.error { "Unable to send email due to ${e.message}" }
         }
 
         return messageId
@@ -53,13 +51,21 @@ class EmailServiceImpl(
     override fun saveVerification(
         mode: OtpModeEnum,
         messageId: String,
-        userId: UUID,
+        user: UserModel,
         otp: String,
-        type: VerificationType
+        type: VerificationType,
+        status: Status
     ): VerificationModel? {
 
         val verificationModel =
-            VerificationModel(pin = otp, mode = OtpModeEnum.EMAIL, messageId = messageId, type = type, userId = userId)
+            VerificationModel(
+                pin = otp,
+                mode = OtpModeEnum.EMAIL,
+                messageId = messageId,
+                type = type,
+                user = user,
+                status = status
+            )
 
         return verificationRepository.save(verificationModel)
     }
@@ -68,8 +74,16 @@ class EmailServiceImpl(
         return verificationRepository.findById(id);
     }
 
-    override fun getbyUserIdAndPin(userId: UUID, pin: String): Optional<VerificationModel> {
-        return verificationRepository.findByUserIdAndPin(userId, pin);
+    override fun getVerificationByIdAndStatus(id: UUID, status: Status): VerificationModel? {
+        return verificationRepository.findByIdAndStatus(id, status)
+    }
+
+    override fun getbyUserIdAndPinAndStatus(userId: UUID, pin: String, status: Status): VerificationModel? {
+        return verificationRepository.findByUserIdAndPinAndStatus(userId, pin, status);
+    }
+
+    override fun updateVerification(verificationModel: VerificationModel): VerificationModel? {
+        return verificationRepository.save(verificationModel)
     }
 
 
