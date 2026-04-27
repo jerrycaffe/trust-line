@@ -23,13 +23,14 @@ spring:
       max-lifetime: 1200000
       connection-timeout: 30000
       validation-timeout: 5000
-      leak-detection-threshold: 15000
+      leak-detection-threshold: 60000
 
   jpa:
+    open-in-view: false
     show-sql: false
     properties:
       hibernate:
-        ddl-auto: create
+        ddl-auto: validate
         format_sql: true
 
 jwt:
