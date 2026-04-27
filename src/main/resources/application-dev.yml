@@ -10,7 +10,7 @@ spring:
     connect-retries: 3
     validate-on-migrate: true
     url: jdbc:postgresql://aws-1-eu-west-1.pooler.supabase.com:6543/postgres?sslmode=require&reWriteBatchedInserts=true
-    username: ${DB_USERNAME}
+    username: ${FLYWAY_DB_USERNAME}
     password: ${DB_PASSWORD}
 
   datasource:
