@@ -9,9 +9,10 @@ spring:
     baseline-on-migrate: true
     connect-retries: 3
     validate-on-migrate: true
-    url: jdbc:postgresql://aws-1-eu-west-1.pooler.supabase.com:6543/postgres?sslmode=require&reWriteBatchedInserts=true
-    username: ${FLYWAY_DB_USERNAME}
+    url: postgresql://postgres:${DB_PASSWORD}@db.siewulsrkxcpadmrpwlf.supabase.co:5432/postgres
+    username: ${DB_PASSWORD}
     password: ${DB_PASSWORD}
+    schemas: public
 
   datasource:
     url: jdbc:postgresql://aws-1-eu-west-1.pooler.supabase.com:6543/postgres?sslmode=require&reWriteBatchedInserts=true
