@@ -4,20 +4,21 @@ package trustline.appuser.service;
 import com.cloudinary.Cloudinary
 import com.cloudinary.utils.ObjectUtils
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.springframework.security.authentication.AuthenticationManager
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
-import org.springframework.security.core.userdetails.UsernameNotFoundException
+import org.springframework.data.domain.Sort
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
+import trustline.appuser.PageRequest
+import trustline.appuser.PagedResponse
 import trustline.appuser.Utility
 import trustline.appuser.dto.*
 import trustline.appuser.model.*
 import trustline.appuser.repository.PermissionRepository
 import trustline.appuser.repository.RolesRepository
 import trustline.appuser.repository.UserRepository
+import trustline.cases.repository.CaseRepository
 import trustline.config.exception.BadRequestException
 import trustline.config.exception.DuplicateException
 import trustline.config.exception.EmailNotFoundException
@@ -33,11 +34,11 @@ class UserServiceImpl(
     private val rolesRepository: RolesRepository,
     private val permissionRepository: PermissionRepository,
     private val jwtConfig: JWTConfigService,
-    private val authenticationManager: AuthenticationManager,
     private val passwordEncoder: PasswordEncoder = BCryptPasswordEncoder(),
     private val emailService: EmailService,
     private val institutionService: InstitutionService,
-    private val cloudinary: Cloudinary
+    private val cloudinary: Cloudinary,
+    private val caseRepository: CaseRepository
 ) : UserService {
 
     private val log = KotlinLogging.logger {}
@@ -59,7 +60,8 @@ class UserServiceImpl(
         if (prevUser?.email.equals(user.email)) throw DuplicateException("Email already exist, Please login")
         if (prevUser?.phoneNumber.equals(user.phoneNumber)) throw DuplicateException("Phone number already exist, Please login")
 
-        val userRole = rolesRepository.findByNameAndInstitutionIdIsNull("User") ?: throw NotFoundException("Default user role not found")
+        val userRole = rolesRepository.findByNameAndInstitutionIdIsNull("User")
+            ?: throw NotFoundException("Default user role not found")
         val userModel = user.toUserModel(passwordEncoder.encode(user.password), institution)
         userModel.roles.add(userRole)
         val newUser = userRepository.save(userModel)
@@ -107,12 +109,15 @@ class UserServiceImpl(
 
     @Transactional
     override fun login(loginReq: LoginReq): LoginRes {
-        authenticationManager.authenticate(
-            UsernamePasswordAuthenticationToken(loginReq.userName, loginReq.password)
-        )
-
+        // Avoid role/permission fetch joins for login to prevent duplicate-row
+        // single-result issues when roles have multiple permissions.
         val user = userRepository.findByEmailAndInstitutionId(loginReq.userName!!, loginReq.institutionId!!)
-            ?: throw UsernameNotFoundException(loginReq.userName)
+            ?: throw EmailNotFoundException(loginReq.userName)
+
+        val storedPassword = user.password
+        if (storedPassword.isNullOrBlank() || !passwordEncoder.matches(loginReq.password, storedPassword)) {
+            throw BadRequestException("Invalid Credentials")
+        }
 
         if (user.status == Status.OTP_VALIDATION) {
             val otp = generateOtp(user, generateOtpPin(), ACTIVATE_ACCOUNT, VerificationType.REGISTER)
@@ -120,6 +125,10 @@ class UserServiceImpl(
         }
 
         val roleNames = userRepository.findRoleNamesByUserId(user.id!!)
+
+        // Only role names are embedded in the JWT. Permissions are resolved
+        // server-side from the role on every authenticated request, so admins
+        // can change a role's permissions without invalidating issued tokens.
         val token = jwtConfig.generateToken(user, roleNames)
         return LoginRes(token, user.toResponseDto())
     }
@@ -248,25 +257,94 @@ class UserServiceImpl(
 
     @Transactional
     override fun changeUserRole(changeUserRoleReq: ChangeUserRoleReq): ChangeUserRoleRes {
+        val authDetails = jwtConfig.getAuthDetails()
+        val institution = institutionService.getAuthUserInstitution()
         val user = userRepository.findById(changeUserRoleReq.userId!!)
             .orElseThrow { NotFoundException("User not found") }
 
-        val institution = institutionService.getAuthUserInstitution()
+        if (user.id == authDetails.userId) {
+            throw BadRequestException("You cannot change your own role")
+        }
+
+        if (user.institution.id != institution.id) {
+            throw BadRequestException("User does not belong to your institution")
+        }
+
         val newRole = rolesRepository.findByNameAndInstitutionId(changeUserRoleReq.role!!, institution.id!!)
             ?: rolesRepository.findByNameAndInstitutionIdIsNull(changeUserRoleReq.role!!)
             ?: throw NotFoundException("Role '${changeUserRoleReq.role}' not found")
 
         val previousRole = user.roles.firstOrNull()?.name ?: "None"
 
+        // No-op reassignment should not attempt a DB write to avoid duplicate join-row issues.
+        if (user.roles.size == 1 && user.roles.any { it.id == newRole.id }) {
+            return ChangeUserRoleRes(
+                userId = user.id!!,
+                email = user.email,
+                previousRole = previousRole,
+                newRole = newRole.name!!,
+                roles = user.roles.mapNotNull { it.name }.distinct()
+            )
+        }
+
         user.roles.clear()
         user.roles.add(newRole)
-        userRepository.save(user)
+        val savedUser = userRepository.save(user)
 
         return ChangeUserRoleRes(
-            userId = user.id!!,
-            email = user.email,
+            userId = savedUser.id!!,
+            email = savedUser.email,
             previousRole = previousRole,
-            newRole = newRole.name!!
+            newRole = newRole.name!!,
+            roles = savedUser.roles.mapNotNull { it.name }.distinct()
+        )
+    }
+
+    @Transactional
+    override fun assignUserRoleById(req: AssignUserRoleByIdReq): ChangeUserRoleRes {
+        val authDetails = jwtConfig.getAuthDetails()
+        val institution = institutionService.getAuthUserInstitution()
+        val user = userRepository.findById(req.userId!!)
+            .orElseThrow { NotFoundException("User not found") }
+
+        if (user.id == authDetails.userId) {
+            throw BadRequestException("You cannot change your own role")
+        }
+
+        if (user.institution.id != institution.id) {
+            throw BadRequestException("User does not belong to your institution")
+        }
+
+        val role = rolesRepository.findById(req.roleId!!)
+            .orElseThrow { NotFoundException("Role not found") }
+
+        if (role.institution?.id != null && role.institution?.id != institution.id) {
+            throw BadRequestException("Role does not belong to your institution")
+        }
+
+        val previousRole = user.roles.firstOrNull()?.name ?: "None"
+
+        // No-op reassignment should not attempt a DB write to avoid duplicate join-row issues.
+        if (user.roles.size == 1 && user.roles.any { it.id == role.id }) {
+            return ChangeUserRoleRes(
+                userId = user.id!!,
+                email = user.email,
+                previousRole = previousRole,
+                newRole = role.name ?: "",
+                roles = user.roles.mapNotNull { it.name }.distinct()
+            )
+        }
+
+        user.roles.clear()
+        user.roles.add(role)
+        val savedUser = userRepository.save(user)
+
+        return ChangeUserRoleRes(
+            userId = savedUser.id!!,
+            email = savedUser.email,
+            previousRole = previousRole,
+            newRole = role.name ?: "",
+            roles = savedUser.roles.mapNotNull { it.name }.distinct()
         )
     }
 
@@ -277,9 +355,14 @@ class UserServiceImpl(
                 id = role.id!!,
                 name = role.name!!,
                 description = role.description,
-                institutionId = role.institution?.id,
+                institutionId = role.institutionId,
                 permissions = role.permissions.map { perm ->
-                    PermissionDto(id = perm.id!!, name = perm.name, description = perm.description, institutionId = perm.institution?.id)
+                    PermissionDto(
+                        id = perm.id!!,
+                        name = perm.name,
+                        description = perm.description,
+                        institutionId = perm.institutionId
+                    )
                 }
             )
         }
@@ -288,7 +371,12 @@ class UserServiceImpl(
     override fun getAllPermissions(): List<PermissionDto> {
         val institution = institutionService.getAuthUserInstitution()
         return permissionRepository.findAllByInstitutionIdOrGlobal(institution.id!!).map { perm ->
-            PermissionDto(id = perm.id!!, name = perm.name, description = perm.description, institutionId = perm.institution?.id)
+            PermissionDto(
+                id = perm.id!!,
+                name = perm.name,
+                description = perm.description,
+                institutionId = perm.institutionId
+            )
         }
     }
 
@@ -297,10 +385,18 @@ class UserServiceImpl(
         val institution = institutionService.getAuthUserInstitution()
         if (rolesRepository.findByNameAndInstitutionId(req.name, institution.id!!) != null)
             throw DuplicateException("Role '${req.name}' already exists in this institution")
+        if (rolesRepository.findByNameAndInstitutionIdIsNull(req.name) != null)
+            throw DuplicateException("Role '${req.name}' is reserved as a global role")
         val saved = rolesRepository.save(
             RoleModel(name = req.name, description = req.description, institution = institution)
         )
-        return RoleDto(id = saved.id!!, name = saved.name!!, description = saved.description, institutionId = saved.institution?.id, permissions = emptyList())
+        return RoleDto(
+            id = saved.id!!,
+            name = saved.name!!,
+            description = saved.description,
+            institutionId = institution.id,
+            permissions = emptyList()
+        )
     }
 
     @Transactional
@@ -308,10 +404,17 @@ class UserServiceImpl(
         val institution = institutionService.getAuthUserInstitution()
         if (permissionRepository.findByNameAndInstitutionId(req.name, institution.id!!) != null)
             throw DuplicateException("Permission '${req.name}' already exists in this institution")
+        if (permissionRepository.findByNameAndInstitutionIdIsNull(req.name) != null)
+            throw DuplicateException("Permission '${req.name}' is reserved as a global permission")
         val saved = permissionRepository.save(
             PermissionModel(name = req.name, description = req.description, institution = institution)
         )
-        return PermissionDto(id = saved.id!!, name = saved.name, description = saved.description, institutionId = saved.institution?.id)
+        return PermissionDto(
+            id = saved.id!!,
+            name = saved.name,
+            description = saved.description,
+            institutionId = institution.id
+        )
     }
 
     @Transactional
@@ -322,8 +425,14 @@ class UserServiceImpl(
         if (role.institution?.id != institution.id)
             throw BadRequestException("Role does not belong to your institution")
         val permissions = req.permissionIds.map { permId ->
-            permissionRepository.findById(permId)
+            val permission = permissionRepository.findById(permId)
                 .orElseThrow { NotFoundException("Permission '$permId' not found") }
+
+            if (permission.institution?.id != null && permission.institution.id != institution.id) {
+                throw BadRequestException("Permission '$permId' does not belong to your institution")
+            }
+
+            permission
         }
         role.permissions.addAll(permissions)
         val saved = rolesRepository.save(role)
@@ -331,11 +440,82 @@ class UserServiceImpl(
             id = saved.id!!,
             name = saved.name!!,
             description = saved.description,
-            institutionId = saved.institution?.id,
+            institutionId = saved.institutionId,
             permissions = saved.permissions.map { perm ->
-                PermissionDto(id = perm.id!!, name = perm.name, description = perm.description, institutionId = perm.institution?.id)
+                PermissionDto(
+                    id = perm.id!!,
+                    name = perm.name,
+                    description = perm.description,
+                    institutionId = perm.institutionId
+                )
             }
         )
+    }
+
+    @Transactional
+    override fun getAllNonAdminUsersWithOngoingCases(): List<AdminUserListDto> {
+        val institution = institutionService.getAuthUserInstitution()
+        val institutionId = institution.id ?: throw NotFoundException("Institution not found")
+        val users = userRepository.findNonAdminUsersByInstitutionId(institutionId)
+
+        return users.map { user -> toAdminUserListDto(user, institutionId) }
+    }
+
+    @Transactional
+    override fun getAllAdminUsersWithoutLoggedInUser(): List<AdminUserListDto> {
+        val authDetails = jwtConfig.getAuthDetails()
+        val institution = institutionService.getAuthUserInstitution()
+        val institutionId = institution.id ?: throw NotFoundException("Institution not found")
+        val users = userRepository.findAdminUsersByInstitutionIdExcludingCurrentUser(institutionId, authDetails.userId)
+
+        return users.map { user -> toAdminUserListDto(user, institutionId) }
+    }
+
+    @Transactional
+    override fun getFilteredNonAdminUsersWithOngoingCases(
+        offset: Int,
+        limit: Int,
+        email: String?,
+        firstName: String?,
+        lastName: String?,
+        gender: Gender?,
+        verifiedStatus: Boolean?
+    ): PagedResponse<AdminUserListDto> {
+        val institution = institutionService.getAuthUserInstitution()
+        val institutionId = institution.id ?: throw NotFoundException("Institution not found")
+
+        val normalizedEmail = email?.trim()?.lowercase()?.takeIf { it.isNotEmpty() }?.let { "%$it%" }
+        val normalizedFirstName = firstName?.trim()?.lowercase()?.takeIf { it.isNotEmpty() }?.let { "%$it%" }
+        val normalizedLastName = lastName?.trim()?.lowercase()?.takeIf { it.isNotEmpty() }?.let { "%$it%" }
+
+        val usersPage = userRepository.findNonAdminUsersByInstitutionIdAndFilters(
+            institutionId,
+            normalizedEmail,
+            normalizedFirstName,
+            normalizedLastName,
+            gender,
+            verifiedStatus,
+            PageRequest(offset, limit, Sort.by("createdAt").descending())
+        )
+
+        return PagedResponse(usersPage.map { user -> toAdminUserListDto(user, institutionId) })
+    }
+
+    @Transactional
+    override fun getNonAdminUserById(userId: UUID): AdminUserListDto {
+        val institution = institutionService.getAuthUserInstitution()
+        val institutionId = institution.id ?: throw NotFoundException("Institution not found")
+        val user = userRepository.findById(userId)
+            .orElseThrow { NotFoundException("User not found") }
+
+        if (user.institution.id != institutionId) {
+            throw NotFoundException("User not found in your institution")
+        }
+
+      
+
+
+        return toAdminUserListDto(user, institutionId)
     }
 
     @Transactional
@@ -378,4 +558,27 @@ class UserServiceImpl(
             .orElseThrow { NotFoundException("User not found") }
         return user.toProfileResponse()
     }
+
+    private fun toAdminUserListDto(user: UserModel, institutionId: UUID): AdminUserListDto {
+        val userId = user.id ?: throw NotFoundException("User id not found")
+        val ongoingCases = caseRepository.countByUserIdAndInstitutionIdAndIsDeletedFalseAndIsClosedFalse(
+            userId,
+            institutionId
+        )
+
+        return AdminUserListDto(
+            userId = userId,
+            email = user.email,
+            firstName = user.firstName,
+            lastName = user.lastName,
+            phoneNumber = user.phoneNumber,
+            status = user.status,
+            roles = user.roles.mapNotNull { it.name }.distinct(),
+            unit = user.unit?.name,
+            gender = user.gender,
+            createdAt = user.createdAt,
+            ongoingCases = ongoingCases
+        )
+    }
 }
+

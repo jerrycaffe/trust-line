@@ -21,5 +21,8 @@ object ErrorCodes {
 
     const val ILLEGAL_INPUT_ERROR_CODE = "76"
     const val ILLEGAL_INPUT_ERROR_MESSAGE = "Improper Argument passed"
+
+    const val FILE_UPLOAD_SIZE_EXCEEDED_ERROR_CODE = "31"
+    const val FILE_UPLOAD_SIZE_EXCEEDED_ERROR_MESSAGE = "Maximum upload size exceeded"
 }
 

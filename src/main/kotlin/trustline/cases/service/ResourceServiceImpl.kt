@@ -2,9 +2,12 @@ package trustline.cases.service
 
 import com.cloudinary.Cloudinary
 import com.cloudinary.utils.ObjectUtils
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
+import trustline.appuser.PageRequest
+import trustline.appuser.PagedResponse
 import trustline.appuser.service.UserService
 import trustline.cases.dto.CreateResourceRequest
 import trustline.cases.dto.ResourceResponseDto
@@ -58,9 +61,17 @@ class ResourceServiceImpl(
 
     @Transactional
     override fun updateResource(resourceId: UUID, request: UpdateResourceRequest, file: MultipartFile?): ResourceResponseDto {
+        val authDetails = jwtConfigService.getAuthDetails()
         val resource = getResourceModel(resourceId)
 
         if (request.name != null) resource.name = request.name
+        if (request.incidentTypeId != null) {
+            val incidentType = incidentTypeRepository.findByIdAndInstitutionIdAndDeletedFalse(
+                request.incidentTypeId,
+                authDetails.institutionId
+            ) ?: throw NotFoundException("Incident type not found")
+            resource.incidentType = incidentType
+        }
         if (request.contents != null) resource.contents = request.contents
         if (file != null) resource.fileUpload = uploadFile(file)
 
@@ -71,8 +82,7 @@ class ResourceServiceImpl(
     @Transactional
     override fun deleteResource(resourceId: UUID) {
         val resource = getResourceModel(resourceId)
-        resource.deleted = true
-        resourceRepository.save(resource)
+        resourceRepository.delete(resource)
     }
 
     override fun getResourceById(resourceId: UUID): ResourceResponseDto {
@@ -82,10 +92,13 @@ class ResourceServiceImpl(
         return toResponse(resource)
     }
 
-    override fun getAllResources(): List<ResourceResponseDto> {
+    override fun getAllResources(offset: Int, limit: Int): PagedResponse<ResourceResponseDto> {
         val authDetails = jwtConfigService.getAuthDetails()
-        return resourceRepository.findByInstitutionIdAndDeletedFalse(authDetails.institutionId)
-            .map { toResponse(it) }
+        val page = resourceRepository.findByInstitutionIdAndDeletedFalse(
+            authDetails.institutionId,
+            PageRequest(offset, limit, Sort.by("createdAt").descending())
+        )
+        return PagedResponse(page.map { toResponse(it) })
     }
 
     override fun getResourcesByIncidentType(incidentTypeId: UUID): List<ResourceResponseDto> {

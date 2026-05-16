@@ -13,8 +13,11 @@ import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.ServletRequestBindingException
 import org.springframework.web.bind.annotation.ControllerAdvice
 import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.multipart.MaxUploadSizeExceededException
 import trustline.appuser.dto.TrustlineResponse
 import trustline.config.exception.ErrorCodes.BAD_CREDENTIALS_ERROR_CODE
+import trustline.config.exception.ErrorCodes.FILE_UPLOAD_SIZE_EXCEEDED_ERROR_CODE
+import trustline.config.exception.ErrorCodes.FILE_UPLOAD_SIZE_EXCEEDED_ERROR_MESSAGE
 import trustline.config.exception.ErrorCodes.FORMAT_ERROR_CODE
 import trustline.config.exception.ErrorCodes.ILLEGAL_INPUT_ERROR_CODE
 import trustline.config.exception.ErrorCodes.ILLEGAL_INPUT_ERROR_MESSAGE
@@ -96,6 +99,12 @@ class AbstractExceptionHandler {
     fun handleAuthorizationDenied(ex: AuthorizationDeniedException): ResponseEntity<TrustlineResponse<Any>> {
         log.error("AuthorizationDeniedException >>> $ex", ex)
         return errorResponse(FORMAT_ERROR_CODE, "Access Denied", HttpStatus.FORBIDDEN)
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException::class)
+    fun handleMaxUploadSizeExceeded(ex: MaxUploadSizeExceededException): ResponseEntity<TrustlineResponse<Any>> {
+        log.error("MaxUploadSizeExceededException >>> $ex", ex)
+        return errorResponse(FILE_UPLOAD_SIZE_EXCEEDED_ERROR_CODE, FILE_UPLOAD_SIZE_EXCEEDED_ERROR_MESSAGE, HttpStatus.PAYLOAD_TOO_LARGE)
     }
 
     @ExceptionHandler(HttpMessageNotReadableException::class)

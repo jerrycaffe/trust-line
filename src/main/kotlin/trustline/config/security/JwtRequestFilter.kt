@@ -11,7 +11,6 @@ import org.springframework.core.annotation.Order
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
-import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Component
@@ -19,6 +18,7 @@ import org.springframework.web.filter.OncePerRequestFilter
 import trustline.appuser.dto.TrustlineResponse
 import java.io.IOException
 import java.security.SignatureException
+import java.util.UUID
 
 @Component
 @Order(1)
@@ -59,18 +59,20 @@ class JwtRequestFilter(
         }
 
         if (username.isNotEmpty() && SecurityContextHolder.getContext().authentication == null) {
-            val userDetails: UserDetails = userSvc.loadUserByUsername(username)
-
             try {
                 val claims = jwtConfigService.extractClaims(token)
                 val userId = claims["id"] as String
                 val institutionId = claims["institution_id"] as String
+                val userDetails: UserDetails = userSvc.loadUserByEmailAndInstitutionId(
+                    username,
+                    UUID.fromString(institutionId)
+                )
 
-                val grantedAuth = (claims["roles"] as? List<*>)
-                    ?.filterIsInstance<String>()
-                    ?.map { SimpleGrantedAuthority(it) }
-                    ?.toList()
-                    ?: emptyList()
+                // Authorities are sourced from the database (role names + the
+                // permissions currently attached to those roles). The JWT only
+                // identifies the user/role; permission changes take effect on
+                // the next request without re-issuing the token.
+                val grantedAuth = userDetails.authorities
 
                 if (jwtConfigService.isTokenValid(token, userDetails)) {
 

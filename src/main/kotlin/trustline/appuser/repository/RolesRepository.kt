@@ -39,4 +39,11 @@ interface RolesRepository : JpaRepository<RoleModel, UUID> {
     /** Fetches only the roles belonging to [institutionId] with their permissions eagerly loaded. */
     @Query("SELECT DISTINCT r FROM RoleModel r LEFT JOIN FETCH r.permissions WHERE r.institution.id = :institutionId")
     fun findAllByInstitutionIdWithPermissions(@Param("institutionId") institutionId: UUID): List<RoleModel>
+
+    /** Fetches institution roles plus global roles, both with permissions eagerly loaded. */
+    @Query(
+        "SELECT DISTINCT r FROM RoleModel r LEFT JOIN FETCH r.permissions " +
+            "WHERE r.institution.id = :institutionId OR r.institution IS NULL"
+    )
+    fun findAllByInstitutionIdOrGlobalWithPermissions(@Param("institutionId") institutionId: UUID): List<RoleModel>
 }

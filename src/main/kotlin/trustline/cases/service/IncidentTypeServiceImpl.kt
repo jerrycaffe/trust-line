@@ -5,19 +5,26 @@ import org.springframework.transaction.annotation.Transactional
 import trustline.appuser.service.UserService
 import trustline.cases.dto.CreateIncidentTypeReq
 import trustline.cases.dto.UpdateIncidentTypeReq
+import trustline.cases.dto.UpdateIncidentTypeUnitsReq
 import trustline.cases.dto.toIncidentTypeModel
+import trustline.cases.model.IncidentTypeUnitId
+import trustline.cases.model.IncidentTypeUnitsModel
 import trustline.cases.model.IncidentTypeResponseDto
 import trustline.cases.model.toIncidentTypeResponse
 import trustline.cases.repository.IncidentTypeRepository
+import trustline.cases.repository.IncidentTypeUnitsRepository
 import trustline.config.exception.BadRequestException
 import trustline.config.exception.NotFoundException
 import trustline.config.security.JWTConfigService
+import trustline.institution.repository.UnitRepository
 import trustline.institution.service.InstitutionService
 import java.util.*
 
 @Service
 class IncidentTypeServiceImpl(
     private val incidentTypeRepository: IncidentTypeRepository,
+    private val incidentTypeUnitsRepository: IncidentTypeUnitsRepository,
+    private val unitRepository: UnitRepository,
     private val jwtConfigService: JWTConfigService,
     private val institutionService: InstitutionService,
     private val userService: UserService
@@ -34,7 +41,9 @@ class IncidentTypeServiceImpl(
         }
 
         val incidentType = request.toIncidentTypeModel(institution, createdBy)
-        return incidentTypeRepository.save(incidentType).toIncidentTypeResponse()
+        val savedIncidentType = incidentTypeRepository.save(incidentType)
+        replaceIncidentTypeUnits(savedIncidentType, request.unitIds, authDetails.institutionId)
+        return savedIncidentType.toIncidentTypeResponse()
     }
 
     @Transactional
@@ -53,8 +62,43 @@ class IncidentTypeServiceImpl(
         }
         request.description?.let { incidentType.description = it }
         request.steps?.let { incidentType.steps = it }
+        replaceIncidentTypeUnits(incidentType, request.unitIds, authDetails.institutionId)
 
         return incidentTypeRepository.save(incidentType).toIncidentTypeResponse()
+    }
+
+    @Transactional
+    override fun updateUnits(id: UUID, request: UpdateIncidentTypeUnitsReq): IncidentTypeResponseDto {
+        val authDetails = jwtConfigService.getAuthDetails()
+        val incidentType = incidentTypeRepository.findByIdAndInstitutionIdAndDeletedFalse(id, authDetails.institutionId)
+            ?: throw NotFoundException("Incident type not found")
+
+        replaceIncidentTypeUnits(incidentType, request.unitIds, authDetails.institutionId)
+
+        return incidentType.toIncidentTypeResponse()
+    }
+
+    private fun replaceIncidentTypeUnits(incidentType: trustline.cases.model.IncidentTypesModel, unitIds: List<UUID>, institutionId: UUID) {
+        val distinctUnitIds = unitIds.distinct()
+        if (distinctUnitIds.isEmpty()) {
+            throw BadRequestException("At least one unit is required")
+        }
+
+        incidentTypeUnitsRepository.deleteAll(
+            incidentTypeUnitsRepository.findByIncidentTypeId(incidentType.id!!)
+        )
+
+        val unitsToSave = distinctUnitIds.map { unitId ->
+            val unit = unitRepository.findByIdAndInstitutionId(unitId, institutionId)
+                ?: throw NotFoundException("Unit not found in your institution: $unitId")
+            IncidentTypeUnitsModel(
+                id = IncidentTypeUnitId(incidentTypeId = incidentType.id, unitId = unit.id),
+                incidentType = incidentType,
+                unit = unit
+            )
+        }
+
+        incidentTypeUnitsRepository.saveAll(unitsToSave)
     }
 
     override fun getById(id: UUID): IncidentTypeResponseDto {
@@ -76,7 +120,9 @@ class IncidentTypeServiceImpl(
         val incidentType = incidentTypeRepository.findByIdAndInstitutionIdAndDeletedFalse(id, authDetails.institutionId)
             ?: throw NotFoundException("Incident type not found")
 
-        incidentType.deleted = true
-        incidentTypeRepository.save(incidentType)
+        incidentTypeUnitsRepository.deleteAll(
+            incidentTypeUnitsRepository.findByIncidentTypeId(incidentType.id!!)
+        )
+        incidentTypeRepository.delete(incidentType)
     }
 }

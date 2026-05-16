@@ -22,6 +22,7 @@ data class CreateCaseDto(
 
 data class CaseResponseDto(
     val id: UUID,
+    val caseNumber: String?,
     val incidentType: String,
     val dateOfIncident: LocalDateTime?,
     val location: String,
@@ -31,6 +32,11 @@ data class CaseResponseDto(
     val closed: Boolean,
     val currentUnit: String?,
     val nextUnit: String?,
+    val allUnitsInvolved: List<String>,
+    val unitsThatCommented: List<String>,
+    val unitsYetToComment: List<String>,
+    val treatedUnits: List<String>,
+    val tracking: Double,
     val files: List<FileDto>,
     val comments: List<CommentResponseDto>,
     val createdAt: LocalDateTime?,
@@ -48,9 +54,15 @@ data class CreateCommentRequest(
     val nextUnitId: UUID? = null
 )
 
+data class ConcludeCaseRequest(
+    @field:NotBlank(message = "Conclude note is required")
+    val concludeNote: String? = null
+)
+
 data class CommentResponseDto(
     val id: UUID,
     val comment: String,
     val commenterEmail: String,
+    val commenterUnit: String?,
     val createdAt: LocalDateTime?
 )

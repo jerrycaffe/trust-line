@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.*
 import trustline.notification.dto.CreateNotificationRequest
 import trustline.notification.dto.NotificationResponseDto
 import trustline.notification.service.NotificationService
+import trustline.config.security.PermissionAuthorities.ADMINISTRATOR
+import trustline.config.security.PermissionAuthorities.MANAGE_NOTIFICATIONS
 import java.util.*
 
 @RestController
@@ -15,7 +17,7 @@ class NotificationController(
 ) {
 
     @PostMapping
-    @PreAuthorize("hasAuthority('Administrator')")
+    @PreAuthorize("hasAnyAuthority('$ADMINISTRATOR', '$MANAGE_NOTIFICATIONS')")
     fun create(@Validated @RequestBody request: CreateNotificationRequest): NotificationResponseDto {
         return notificationService.createNotification(request)
     }

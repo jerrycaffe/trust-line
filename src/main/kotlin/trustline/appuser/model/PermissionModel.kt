@@ -36,5 +36,8 @@ data class PermissionModel(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "institution_id")
-    val institution: InstitutionModel? = null
+    val institution: InstitutionModel? = null,
+
+    @Column(name = "institution_id", insertable = false, updatable = false)
+    val institutionId: UUID? = null
 ) : AuditModel()

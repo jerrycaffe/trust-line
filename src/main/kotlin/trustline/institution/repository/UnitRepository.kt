@@ -6,4 +6,8 @@ import trustline.institution.model.UnitModel
 import java.util.*
 
 @Repository
-interface UnitRepository : JpaRepository<UnitModel, UUID>
+interface UnitRepository : JpaRepository<UnitModel, UUID> {
+    fun findByInstitutionId(institutionId: UUID): List<UnitModel>
+    fun findByIdAndInstitutionId(id: UUID, institutionId: UUID): UnitModel?
+    fun existsByNameAndInstitutionId(name: String, institutionId: UUID): Boolean
+}

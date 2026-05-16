@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import trustline.appuser.dto.*
 import trustline.appuser.model.RoleModel
@@ -18,6 +17,7 @@ import trustline.appuser.repository.RolesRepository
 import trustline.appuser.repository.UserRepository
 import trustline.appuser.service.EmailService
 import trustline.appuser.service.UserServiceImpl
+import trustline.cases.repository.CaseRepository
 import trustline.config.exception.DuplicateException
 import trustline.config.exception.NotFoundException
 import trustline.config.security.JWTConfigService
@@ -33,11 +33,11 @@ class UserServiceTest {
     private val rolesRepository = mockk<RolesRepository>()
     private val permissionRepository = mockk<PermissionRepository>()
     private val jwtConfig = mockk<JWTConfigService>()
-    private val authenticationManager = mockk<AuthenticationManager>()
     private val passwordEncoder = BCryptPasswordEncoder()
     private val emailService = mockk<EmailService>()
     private val institutionService = mockk<InstitutionService>()
     private val cloudinary = mockk<Cloudinary>()
+    private val caseRepository = mockk<CaseRepository>()
 
     private lateinit var userService: UserServiceImpl
 
@@ -50,8 +50,8 @@ class UserServiceTest {
     fun setUp() {
         userService = UserServiceImpl(
             userRepository, rolesRepository, permissionRepository,
-            jwtConfig, authenticationManager, passwordEncoder,
-            emailService, institutionService, cloudinary
+            jwtConfig, passwordEncoder,
+            emailService, institutionService, cloudinary, caseRepository
         )
     }
 
