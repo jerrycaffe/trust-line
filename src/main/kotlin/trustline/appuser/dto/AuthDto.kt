@@ -3,6 +3,7 @@ package trustline.appuser.dto
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import trustline.appuser.model.UserResponseDto
+import java.time.LocalDateTime
 import java.util.*
 
 data class LoginRes(
@@ -51,7 +52,7 @@ enum class VerificationType {
 }
 
 enum class Status {
-    OTP_VALIDATION, DISABLED, VERIFIED, COMPLETED, DISCONTINUED, UNVERIFIED
+    OTP_VALIDATION, DISABLED, VERIFIED, COMPLETED, DISCONTINUED, UNVERIFIED, PENDING
 }
 
 enum class AuthProvider {
@@ -108,11 +109,19 @@ data class ChangeUserRoleReq(
     val role: String? = null
 )
 
+data class AssignUserRoleByIdReq(
+    @field:NotNull(message = "User ID is required")
+    val userId: UUID? = null,
+    @field:NotNull(message = "Role ID is required")
+    val roleId: UUID? = null
+)
+
 data class ChangeUserRoleRes(
     val userId: UUID,
     val email: String,
     val previousRole: String,
-    val newRole: String
+    val newRole: String,
+    val roles: List<String>
 )
 
 data class RoleDto(
@@ -147,4 +156,18 @@ data class CreatePermissionRequest(
 data class AddPermissionsToRoleRequest(
     @field:NotNull(message = "permissionIds is required")
     val permissionIds: List<UUID>
+)
+
+data class AdminUserListDto(
+    val userId: UUID,
+    val email: String,
+    val firstName: String?,
+    val lastName: String?,
+    val phoneNumber: String?,
+    val status: Status?,
+    val roles: List<String>,
+    val unit: String?,
+    val gender: Gender?,
+    val createdAt: LocalDateTime?,
+    val ongoingCases: Long
 )

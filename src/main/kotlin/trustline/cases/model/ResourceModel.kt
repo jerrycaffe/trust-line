@@ -21,7 +21,7 @@ data class ResourceModel(
     var contents: String? = null,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "incident_type_id")
-    val incidentType: IncidentTypesModel,
+    var incidentType: IncidentTypesModel,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "file_upload_id")
     var fileUpload: FileUploadsModel? = null,

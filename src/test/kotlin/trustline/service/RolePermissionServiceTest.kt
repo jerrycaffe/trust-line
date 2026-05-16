@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import trustline.appuser.dto.*
 import trustline.appuser.model.RoleModel
@@ -41,7 +40,6 @@ class RolePermissionServiceTest {
     private val rolesRepository: RolesRepository = mockk()
     private val permissionRepository: PermissionRepository = mockk()
     private val jwtConfigService: JWTConfigService = mockk()
-    private val authenticationManager: AuthenticationManager = mockk()
     private val emailService: EmailService = mockk()
     private val institutionService: InstitutionService = mockk()
     private val cloudinary: Cloudinary = mockk()
@@ -61,7 +59,6 @@ class RolePermissionServiceTest {
             rolesRepository,
             permissionRepository,
             jwtConfigService,
-            authenticationManager,
             BCryptPasswordEncoder(),
             emailService,
             institutionService,
@@ -80,10 +77,12 @@ class RolePermissionServiceTest {
             id = UUID.randomUUID(),
             name = req.name,
             description = req.description,
-            institution = institution
+            institution = institution,
+            institutionId = institutionId
         )
 
         every { rolesRepository.findByNameAndInstitutionId(req.name, institutionId) } returns null
+        every { rolesRepository.findByNameAndInstitutionIdIsNull(req.name) } returns null
         every { rolesRepository.save(any()) } returns savedRole
 
         val result = userService.createRole(req)
@@ -113,10 +112,12 @@ class RolePermissionServiceTest {
             id = UUID.randomUUID(),
             name = req.name,
             description = req.description,
-            institution = institution
+            institution = institution,
+            institutionId = institutionId
         )
 
         every { permissionRepository.findByNameAndInstitutionId(req.name, institutionId) } returns null
+        every { permissionRepository.findByNameAndInstitutionIdIsNull(req.name) } returns null
         every { permissionRepository.save(any()) } returns savedPerm
 
         val result = userService.createPermission(req)
@@ -142,8 +143,14 @@ class RolePermissionServiceTest {
     fun `addPermissionsToRole should attach permissions to role and return updated RoleDto`() {
         val roleId = UUID.randomUUID()
         val permId = UUID.randomUUID()
-        val perm = PermissionModel(id = permId, name = "VIEW_REPORTS", description = "Read-only", institution = institution)
-        val role = RoleModel(id = roleId, name = "Analyst", institution = institution)
+        val perm = PermissionModel(
+            id = permId,
+            name = "VIEW_REPORTS",
+            description = "Read-only",
+            institution = institution,
+            institutionId = institutionId
+        )
+        val role = RoleModel(id = roleId, name = "Analyst", institution = institution, institutionId = institutionId)
 
         val req = AddPermissionsToRoleRequest(permissionIds = listOf(permId))
 
@@ -176,7 +183,7 @@ class RolePermissionServiceTest {
     fun `addPermissionsToRole should throw NotFoundException when permission does not exist`() {
         val roleId = UUID.randomUUID()
         val missingPermId = UUID.randomUUID()
-        val role = RoleModel(id = roleId, name = "Analyst", institution = institution)
+        val role = RoleModel(id = roleId, name = "Analyst", institution = institution, institutionId = institutionId)
 
         every { rolesRepository.findById(roleId) } returns Optional.of(role)
         every { permissionRepository.findById(missingPermId) } returns Optional.empty()
@@ -191,8 +198,8 @@ class RolePermissionServiceTest {
     @Test
     fun `getAllRoles should return institution-scoped roles with their permissions`() {
         val roles = listOf(
-            RoleModel(id = UUID.randomUUID(), name = "Analyst", institution = institution),
-            RoleModel(id = UUID.randomUUID(), name = "Supervisor", institution = institution)
+            RoleModel(id = UUID.randomUUID(), name = "Analyst", institution = institution, institutionId = institutionId),
+            RoleModel(id = UUID.randomUUID(), name = "Supervisor", institution = institution, institutionId = institutionId)
         )
         every { rolesRepository.findAllByInstitutionIdWithPermissions(institutionId) } returns roles
 
@@ -206,7 +213,13 @@ class RolePermissionServiceTest {
 
     @Test
     fun `getAllPermissions should combine institution-specific and global permissions`() {
-        val scopedPerm = PermissionModel(id = UUID.randomUUID(), name = "SCOPED", description = "inst specific", institution = institution)
+        val scopedPerm = PermissionModel(
+            id = UUID.randomUUID(),
+            name = "SCOPED",
+            description = "inst specific",
+            institution = institution,
+            institutionId = institutionId
+        )
         val globalPerm = PermissionModel(id = UUID.randomUUID(), name = "GLOBAL", description = "global perm")
 
         every { permissionRepository.findAllByInstitutionIdOrGlobal(institutionId) } returns listOf(scopedPerm, globalPerm)

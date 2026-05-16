@@ -17,6 +17,7 @@ data class CreateResourceRequest(
 
 data class UpdateResourceRequest(
     val name: String? = null,
+    val incidentTypeId: UUID? = null,
     val contents: String? = null
 )
 

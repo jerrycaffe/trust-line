@@ -5,8 +5,11 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
+import trustline.appuser.PagedResponse
 import trustline.cases.dto.*
 import trustline.cases.service.ResourceService
+import trustline.config.security.PermissionAuthorities.ADMINISTRATOR
+import trustline.config.security.PermissionAuthorities.MANAGE_RESOURCES
 import java.util.*
 
 @RestController
@@ -16,7 +19,7 @@ class ResourceController(
 ) {
 
     @PostMapping(consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
-    @PreAuthorize("hasAuthority('Administrator')")
+    @PreAuthorize("hasAnyAuthority('$ADMINISTRATOR', '$MANAGE_RESOURCES')")
     fun create(
         @Validated @RequestPart("resource") request: CreateResourceRequest,
         @RequestPart("file", required = false) file: MultipartFile?
@@ -25,7 +28,7 @@ class ResourceController(
     }
 
     @PutMapping("/{resourceId}", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
-    @PreAuthorize("hasAuthority('Administrator')")
+    @PreAuthorize("hasAnyAuthority('$ADMINISTRATOR', '$MANAGE_RESOURCES')")
     fun update(
         @PathVariable resourceId: UUID,
         @Validated @RequestPart("resource") request: UpdateResourceRequest,
@@ -35,7 +38,7 @@ class ResourceController(
     }
 
     @DeleteMapping("/{resourceId}")
-    @PreAuthorize("hasAuthority('Administrator')")
+    @PreAuthorize("hasAnyAuthority('$ADMINISTRATOR', '$MANAGE_RESOURCES')")
     fun delete(@PathVariable resourceId: UUID) {
         resourceService.deleteResource(resourceId)
     }
@@ -46,8 +49,11 @@ class ResourceController(
     }
 
     @GetMapping
-    fun getAll(): List<ResourceResponseDto> {
-        return resourceService.getAllResources()
+    fun getAll(
+        @RequestParam(value = "offset") offset: Int? = 0,
+        @RequestParam(value = "limit") limit: Int? = 20,
+    ): PagedResponse<ResourceResponseDto> {
+        return resourceService.getAllResources(offset!!, limit!!)
     }
 
     @GetMapping("/incident-type/{incidentTypeId}")

@@ -45,5 +45,7 @@ data class CasesModel(
     @Column(name = "closed")
     var isClosed: Boolean = false,
     @Column(name = "deleted")
-    var isDeleted: Boolean? = false
+    var isDeleted: Boolean? = false,
+    @Column(name = "case_number", unique = true)
+    val caseNumber: String? = null
 ) : AuditModel()

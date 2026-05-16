@@ -5,8 +5,11 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import trustline.cases.dto.CreateIncidentTypeReq
 import trustline.cases.dto.UpdateIncidentTypeReq
+import trustline.cases.dto.UpdateIncidentTypeUnitsReq
 import trustline.cases.model.IncidentTypeResponseDto
 import trustline.cases.service.IncidentTypeService
+import trustline.config.security.PermissionAuthorities.ADMINISTRATOR
+import trustline.config.security.PermissionAuthorities.MANAGE_INCIDENT_TYPES
 import java.util.*
 
 @RestController
@@ -16,15 +19,24 @@ class IncidentTypeController(
 ) {
 
     @PostMapping
-    @PreAuthorize("hasAuthority('Administrator')")
+    @PreAuthorize("hasAnyAuthority('$ADMINISTRATOR', '$MANAGE_INCIDENT_TYPES')")
     fun create(@Validated @RequestBody request: CreateIncidentTypeReq): IncidentTypeResponseDto {
         return incidentTypeService.create(request)
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('Administrator')")
+    @PreAuthorize("hasAnyAuthority('$ADMINISTRATOR', '$MANAGE_INCIDENT_TYPES')")
     fun update(@PathVariable id: UUID, @Validated @RequestBody request: UpdateIncidentTypeReq): IncidentTypeResponseDto {
         return incidentTypeService.update(id, request)
+    }
+
+    @PutMapping("/{id}/units")
+    @PreAuthorize("hasAnyAuthority('$ADMINISTRATOR', '$MANAGE_INCIDENT_TYPES')")
+    fun updateUnits(
+        @PathVariable id: UUID,
+        @Validated @RequestBody request: UpdateIncidentTypeUnitsReq
+    ): IncidentTypeResponseDto {
+        return incidentTypeService.updateUnits(id, request)
     }
 
     @GetMapping("/{id}")
@@ -38,7 +50,7 @@ class IncidentTypeController(
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('Administrator')")
+    @PreAuthorize("hasAnyAuthority('$ADMINISTRATOR', '$MANAGE_INCIDENT_TYPES')")
     fun delete(@PathVariable id: UUID) {
         incidentTypeService.delete(id)
     }

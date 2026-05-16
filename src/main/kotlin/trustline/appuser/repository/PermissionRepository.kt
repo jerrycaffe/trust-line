@@ -21,6 +21,9 @@ interface PermissionRepository : JpaRepository<PermissionModel, UUID> {
     /** Finds a permission by name strictly within a specific institution. */
     fun findByNameAndInstitutionId(name: String, institutionId: UUID): PermissionModel?
 
+    /** Finds a global permission (institution IS NULL) by name. */
+    fun findByNameAndInstitutionIdIsNull(name: String): PermissionModel?
+
     /** Returns institution-specific permissions plus global (no-institution) permissions. */
     /**
      * Returns all permissions visible to [institutionId]: those belonging to the

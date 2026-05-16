@@ -8,7 +8,6 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
-import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import trustline.appuser.dto.*
 import trustline.appuser.model.RoleModel
@@ -33,7 +32,6 @@ class UserServiceTest {
     private val rolesRepository = mockk<RolesRepository>()
     private val permissionRepository = mockk<PermissionRepository>()
     private val jwtConfig = mockk<JWTConfigService>()
-    private val authenticationManager = mockk<AuthenticationManager>()
     private val passwordEncoder = BCryptPasswordEncoder()
     private val emailService = mockk<EmailService>()
     private val institutionService = mockk<InstitutionService>()
@@ -50,7 +48,7 @@ class UserServiceTest {
     fun setUp() {
         userService = UserServiceImpl(
             userRepository, rolesRepository, permissionRepository,
-            jwtConfig, authenticationManager, passwordEncoder,
+            jwtConfig, passwordEncoder,
             emailService, institutionService, cloudinary
         )
     }

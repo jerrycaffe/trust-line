@@ -7,17 +7,24 @@ import trustline.appuser.dto.AuthProvider
 import trustline.appuser.dto.Gender
 import trustline.appuser.dto.Status
 import trustline.institution.model.InstitutionModel
+import trustline.institution.model.UnitModel
 import java.util.*
 
 @Entity
-@Table(name = "users")
+@Table(
+    name = "users",
+    uniqueConstraints = [
+        UniqueConstraint(name = "uq_users_institution_email", columnNames = ["institution_id", "email"]),
+        UniqueConstraint(name = "uq_users_institution_phone", columnNames = ["institution_id", "phone_number"])
+    ]
+)
 data class UserModel(
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     @JdbcTypeCode(SqlTypes.UUID)
     var id: UUID? = null,
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     var email: String,
 
     @Enumerated(EnumType.STRING)
@@ -50,6 +57,10 @@ data class UserModel(
     @JoinColumn(name = "institution_id")
     val institution: InstitutionModel,
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "unit_id")
+    var unit: UnitModel? = null,
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
         name = "users_roles",
@@ -58,7 +69,15 @@ data class UserModel(
     )
     var roles: MutableSet<RoleModel> = mutableSetOf()
 
-) : AuditModel()
+) : AuditModel() {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is UserModel) return false
+        return id != null && id == other.id
+    }
+
+    override fun hashCode(): Int = id?.hashCode() ?: 0
+}
 
 data class UserResponseDto(
     val otpId: UUID? = null,

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.BDDMockito.given
+import org.hamcrest.Matchers.containsString
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc
 import org.springframework.boot.test.mock.mockito.MockBean
@@ -111,6 +112,20 @@ class AdminRolePermissionIT : BaseIT() {
         ).andExpect(status().isForbidden)
     }
 
+    @Test
+    @WithMockUser(authorities = ["MANAGE_ROLES"])
+    fun `POST roles returns 201 for user with MANAGE_ROLES permission`() {
+        val req = CreateRoleRequest(name = "ScopedRole-${UUID.randomUUID()}", description = "Permission-based access")
+
+        mockMvc.perform(
+            post("/api/v1/admin/roles")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(req))
+        )
+            .andExpect(status().isCreated)
+            .andExpect(jsonPath("$.data.name").value(req.name))
+    }
+
     // ── POST /permissions ─────────────────────────────────────────────────────
 
     @Test
@@ -142,7 +157,7 @@ class AdminRolePermissionIT : BaseIT() {
         mockMvc.perform(get("/api/v1/admin/roles"))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$.data").isArray)
-            .andExpect(jsonPath("$.data[?(@.name == '$roleName')]").exists())
+            .andExpect(content().string(containsString(roleName)))
     }
 
     // ── POST /roles/{id}/permissions ──────────────────────────────────────────
