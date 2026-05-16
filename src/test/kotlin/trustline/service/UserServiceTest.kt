@@ -17,6 +17,7 @@ import trustline.appuser.repository.RolesRepository
 import trustline.appuser.repository.UserRepository
 import trustline.appuser.service.EmailService
 import trustline.appuser.service.UserServiceImpl
+import trustline.cases.repository.CaseRepository
 import trustline.config.exception.DuplicateException
 import trustline.config.exception.NotFoundException
 import trustline.config.security.JWTConfigService
@@ -36,6 +37,7 @@ class UserServiceTest {
     private val emailService = mockk<EmailService>()
     private val institutionService = mockk<InstitutionService>()
     private val cloudinary = mockk<Cloudinary>()
+    private val caseRepository = mockk<CaseRepository>()
 
     private lateinit var userService: UserServiceImpl
 
@@ -49,7 +51,7 @@ class UserServiceTest {
         userService = UserServiceImpl(
             userRepository, rolesRepository, permissionRepository,
             jwtConfig, passwordEncoder,
-            emailService, institutionService, cloudinary
+            emailService, institutionService, cloudinary, caseRepository
         )
     }
 

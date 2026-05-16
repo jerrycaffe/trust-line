@@ -17,6 +17,7 @@ import trustline.appuser.repository.RolesRepository
 import trustline.appuser.repository.UserRepository
 import trustline.appuser.service.EmailService
 import trustline.appuser.service.UserServiceImpl
+import trustline.cases.repository.CaseRepository
 import trustline.config.exception.BadRequestException
 import trustline.config.exception.DuplicateException
 import trustline.config.exception.NotFoundException
@@ -43,6 +44,7 @@ class RolePermissionServiceTest {
     private val emailService: EmailService = mockk()
     private val institutionService: InstitutionService = mockk()
     private val cloudinary: Cloudinary = mockk()
+    private val caseRepository: CaseRepository = mockk()
 
     private lateinit var userService: UserServiceImpl
 
@@ -62,7 +64,8 @@ class RolePermissionServiceTest {
             BCryptPasswordEncoder(),
             emailService,
             institutionService,
-            cloudinary
+            cloudinary,
+            caseRepository
         )
         every { jwtConfigService.getAuthDetails() } returns authDetails
         every { institutionService.getAuthUserInstitution() } returns institution
