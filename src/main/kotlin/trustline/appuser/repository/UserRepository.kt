@@ -27,6 +27,9 @@ interface UserRepository : JpaRepository<UserModel, UUID> {
     @Query("SELECT u FROM UserModel u LEFT JOIN FETCH u.roles WHERE u.email = :email AND u.institution.id = :institutionId")
     fun findByEmailAndInstitutionId(@Param("email") email: String, @Param("institutionId") institutionId: UUID): UserModel?
 
+    @Query("SELECT u FROM UserModel u LEFT JOIN FETCH u.roles WHERE u.id = :id AND u.institution.id = :institutionId")
+    fun findByIdAndInstitutionId(@Param("id") id: UUID, @Param("institutionId") institutionId: UUID): UserModel?
+
     @Query(
         "SELECT DISTINCT u FROM UserModel u " +
             "LEFT JOIN FETCH u.roles r " +

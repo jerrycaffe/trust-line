@@ -81,8 +81,8 @@ data class ResendOtpRequest(
 data class ResetPasswordReq(
     @field:NotBlank(message = "newPassword field is expected")
     val newPassword: String? = null,
-    @field:NotBlank(message = "userName field is required")
-    val userName: String? = null,
+    @field:NotNull(message = "userId field is required")
+    val userId: UUID? = null,
     @field:NotNull(message = "institution id is required")
     val institutionId: UUID? = null,
     @field:NotNull(message = "token id required")
