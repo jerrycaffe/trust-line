@@ -183,8 +183,8 @@ class UserServiceImpl(
             ?: throw NotFoundException("Previous token was not found")
 
         val user =
-            userRepository.findByEmailAndInstitutionId(resetPasswordReq.userName!!, resetPasswordReq.institutionId!!)
-                ?: throw EmailNotFoundException(resetPasswordReq.userName)
+            userRepository.findByIdAndInstitutionId(resetPasswordReq.userId!!, resetPasswordReq.institutionId!!)
+                ?: throw EmailNotFoundException("")
 
         val newPassword = passwordEncoder.encode(resetPasswordReq.newPassword)
         user.password = newPassword
