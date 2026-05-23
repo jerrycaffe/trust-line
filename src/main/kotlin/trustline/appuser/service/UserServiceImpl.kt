@@ -179,7 +179,7 @@ class UserServiceImpl(
 
     override fun resetPassword(resetPasswordReq: ResetPasswordReq): UserResponseDto {
 
-        emailService.getVerificationByIdAndStatus(resetPasswordReq.tokenId!!, Status.VERIFIED)
+        emailService.getVerificationByIdAndStatus(resetPasswordReq.otpId!!, Status.VERIFIED)
             ?: throw NotFoundException("Previous token was not found")
 
         val user =
