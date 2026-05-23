@@ -85,8 +85,8 @@ data class ResetPasswordReq(
     val userId: UUID? = null,
     @field:NotNull(message = "institution id is required")
     val institutionId: UUID? = null,
-    @field:NotNull(message = "token id required")
-    val tokenId: UUID? = null
+    @field:NotNull(message = "otp id required")
+    val otpId: UUID? = null
 )
 
 data class InviteUserReq(
