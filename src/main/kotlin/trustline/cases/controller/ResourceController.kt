@@ -6,7 +6,9 @@ import org.springframework.validation.annotation.Validated
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import trustline.appuser.PagedResponse
-import trustline.cases.dto.*
+import trustline.cases.dto.CreateResourceRequest
+import trustline.cases.dto.ResourceResponseDto
+import trustline.cases.dto.UpdateResourceRequest
 import trustline.cases.service.ResourceService
 import trustline.config.security.PermissionAuthorities.ADMINISTRATOR
 import trustline.config.security.PermissionAuthorities.MANAGE_RESOURCES
@@ -50,10 +52,11 @@ class ResourceController(
 
     @GetMapping
     fun getAll(
+        @RequestParam("institutionId") institutionId: UUID,
         @RequestParam(value = "offset") offset: Int? = 0,
         @RequestParam(value = "limit") limit: Int? = 20,
     ): PagedResponse<ResourceResponseDto> {
-        return resourceService.getAllResources(offset!!, limit!!)
+        return resourceService.getAllResources(institutionId, offset!!, limit!!)
     }
 
     @GetMapping("/incident-type/{incidentTypeId}")
