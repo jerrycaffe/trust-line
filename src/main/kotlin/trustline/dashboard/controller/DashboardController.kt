@@ -19,7 +19,7 @@ class DashboardController(
 ) {
 
     @GetMapping("/overview")
-    @PreAuthorize("hasAuthority('$ADMINISTRATOR','$DASHBOARD_METRICS')")
+    @PreAuthorize("hasAnyAuthority('$ADMINISTRATOR', '$DASHBOARD_METRICS')")
     fun overview(
         @RequestParam(value = "from", required = false)
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) from: LocalDateTime?,
