@@ -96,9 +96,9 @@ class ResourceServiceImpl(
         return toResponse(resource)
     }
 
-    override fun getAllResources(institutionId: UUID, offset: Int, limit: Int): PagedResponse<ResourceResponseDto> {
-
-        val page = resourceRepository.findByInstitutionIdAndDeletedFalse(institutionId,
+    override fun getAllResources(offset: Int, limit: Int): PagedResponse<ResourceResponseDto> {
+        val authDetails = jwtConfigService.getAuthDetails()
+        val page = resourceRepository.findByInstitutionIdAndDeletedFalse(authDetails.institutionId,
             PageRequest(offset, limit, Sort.by("createdAt").descending())
         )
         return PagedResponse(page.map { toResponse(it) })
