@@ -52,11 +52,10 @@ class ResourceController(
 
     @GetMapping
     fun getAll(
-        @RequestParam("institutionId") institutionId: UUID,
         @RequestParam(value = "offset") offset: Int? = 0,
         @RequestParam(value = "limit") limit: Int? = 20,
     ): PagedResponse<ResourceResponseDto> {
-        return resourceService.getAllResources(institutionId, offset!!, limit!!)
+        return resourceService.getAllResources(offset!!, limit!!)
     }
 
     @GetMapping("/incident-type/{incidentTypeId}")
