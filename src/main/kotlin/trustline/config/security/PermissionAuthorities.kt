@@ -13,4 +13,5 @@ object PermissionAuthorities {
     const val MANAGE_NOTIFICATIONS = "MANAGE_NOTIFICATIONS"
     const val MANAGE_UNITS = "MANAGE_UNITS"
     const val MANAGE_ACTIVITIES = "MANAGE_ACTIVITIES"
+    const val DASHBOARD_METRICS = "DASHBOARD_METRICS"
 }

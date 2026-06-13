@@ -8,6 +8,7 @@ import trustline.appuser.dto.Gender
 import trustline.appuser.dto.Status
 import trustline.institution.model.InstitutionModel
 import trustline.institution.model.UnitModel
+import java.time.LocalDateTime
 import java.util.*
 
 @Entity
@@ -111,7 +112,10 @@ data class ProfileResponseDto(
     val firstName: String?,
     val lastName: String?,
     val gender: Gender?,
-    val profileImageUrl: String?
+    val role: String?,
+    val unit: String?,
+    val profileImageUrl: String?,
+    val createdAt: LocalDateTime?
 )
 
 fun UserModel.toProfileResponse() = ProfileResponseDto(
@@ -121,5 +125,8 @@ fun UserModel.toProfileResponse() = ProfileResponseDto(
     firstName = firstName,
     lastName = lastName,
     gender = gender,
-    profileImageUrl = profileImageUrl
+    role = roles.firstOrNull()?.name,
+    unit = unit?.name,
+    profileImageUrl = profileImageUrl,
+    createdAt
 )
