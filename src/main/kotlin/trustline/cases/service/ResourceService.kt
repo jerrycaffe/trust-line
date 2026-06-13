@@ -12,6 +12,6 @@ interface ResourceService {
     fun updateResource(resourceId: UUID, request: UpdateResourceRequest, file: MultipartFile?): ResourceResponseDto
     fun deleteResource(resourceId: UUID)
     fun getResourceById(resourceId: UUID): ResourceResponseDto
-    fun getAllResources(offset: Int, limit: Int): PagedResponse<ResourceResponseDto>
+    fun getAllResources(institutionId: UUID, offset: Int, limit: Int): PagedResponse<ResourceResponseDto>
     fun getResourcesByIncidentType(incidentTypeId: UUID): List<ResourceResponseDto>
 }
