@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import trustline.config.security.PermissionAuthorities.ADMINISTRATOR
 import trustline.config.security.PermissionAuthorities.DASHBOARD_METRICS
 import trustline.dashboard.dto.DashboardOverviewDto
 import trustline.dashboard.service.DashboardService
@@ -18,7 +19,7 @@ class DashboardController(
 ) {
 
     @GetMapping("/overview")
-    @PreAuthorize("hasAuthority('$DASHBOARD_METRICS')")
+    @PreAuthorize("hasAuthority('$ADMINISTRATOR','$DASHBOARD_METRICS')")
     fun overview(
         @RequestParam(value = "from", required = false)
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) from: LocalDateTime?,
