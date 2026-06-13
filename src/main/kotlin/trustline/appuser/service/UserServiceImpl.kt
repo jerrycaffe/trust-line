@@ -556,6 +556,7 @@ class UserServiceImpl(
         val authDetails = jwtConfig.getAuthDetails()
         val user = userRepository.findById(authDetails.userId)
             .orElseThrow { NotFoundException("User not found") }
+
         return user.toProfileResponse()
     }
 
